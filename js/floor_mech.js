@@ -315,6 +315,10 @@
     var gs = window.GAME_STATE;
     return hangCarBoxOf(gs && gs.occupied['7'], u);
   }
+  // 宙段フロアに載せた車と、上のフロア(2・3番)の判定の許容(px)。上がりきった位置(u が finalU 以上。ピンで止まって、そのまま積み込みを終える姿勢)は、
+  // 上のフロアが車にめり込んで見えるので、小さい許容(tolFinal)にする(2026-10-30 ユーザー指示「宙段に積んだ車に上のフロアがめり込む」)。
+  // 上がる途中・スロープは、実車でもすき間がほぼ無いので、従来の許容(tol)のまま
+  function hangCarTol(u) { var f = HANG && HANG.finalU !== undefined ? HANG.finalU : 1.6; return ((u >= f - 1e-9 && HANG && HANG.tolFinal !== undefined) ? HANG.tolFinal : (HANG && HANG.tol)) || 0; }
   function hangCarBoxOf(occ, u) {
     if (!occ) return null;
     var a = Math.max(0, Math.min(2, u)), hp = hangPose(a), rad = hp.ang * Math.PI / 180;
@@ -324,7 +328,7 @@
     return {
       x0: x0, x1: x0 + occ.w, h: occ.h,
       // 画面xでの車の高さ(ボンネット・トランクは屋根より低い)。絵が読めない時は全長を屋根の高さとする
-      hAt: function (x) { var tol = (HANG && HANG.tol) || 0; if (!prof) return occ.h - tol; var c = Math.max(0, Math.min(prof.length - 1, Math.floor((x - x0) / occ.w * prof.length))); return occ.h * prof[c] - tol; }
+      hAt: function (x) { var tol = hangCarTol(u); if (!prof) return occ.h - tol; var c = Math.max(0, Math.min(prof.length - 1, Math.floor((x - x0) / occ.w * prof.length))); return occ.h * prof[c] - tol; }
     };
   }
   // 宙段フロアの支柱は、3番前(継ぎ目)のフロアの柱の一番下に埋まっている。3番前のフロアが下がりきって(ピン無しで支柱が一番下に)いる間は、宙段フロアの支柱が動かない
@@ -354,9 +358,11 @@
     var e = hangEnds(nu), car = carOcc ? hangCarBoxOf(carOcc, nu) : hangCarBox(nu), res = { why: null, car: false };
     ['F2', 'F3'].forEach(function (id) {
       if (res.why || (onlyIds && onlyIds.indexOf(id) < 0)) return;
-      var f = FLOORS[id];
-      for (var x = f.x0; x <= f.x1; x += 15) {
-        var p = onFloor(id, x, f.bottom(x), offs);
+      var f = FLOORS[id], pts = [];
+      if (f.art && f.art.length) { for (var ai = 0; ai < f.art.length; ai++) pts.push(f.art[ai]); }   // 描かれた絵の下のふち(列ごと)。絵が読めた時は、直線の近似より低い所(梁など)まで見る(2026-10-30)
+      else for (var x = f.x0; x <= f.x1; x += 15) pts.push([x, f.bottom(x)]);
+      for (var pi = 0; pi < pts.length; pi++) {
+        var p = onFloor(id, pts[pi][0], pts[pi][1], offs);
         if (p[0] < e.F[0] || p[0] > e.R[0]) continue;
         var base = hangTop(nu, p[0]), top = base, inCar = !!(car && p[0] >= car.x0 && p[0] <= car.x1);
         if (inCar) top -= car.hAt(p[0]);
@@ -876,10 +882,15 @@
     function worstOverlap(of) {   // 床の下面が、車の屋根より下に入り込む量(px)の最大。正=入り込んでいる。戻り値 { v, n }
       var worst = { v: -1e9, n: 0 };
       ids.forEach(function (id) {
-        var f = FLOORS[id];
-        for (var x = f.x0; x <= f.x1; x += 15) {
+        var f = FLOORS[id], pts = [];
+        // 床の下面は、描かれた絵のふち(列ごと)で見る。直線の近似 bottom(x) は、3番後ろの薄い延長板の先などで絵より最大10px以上低く、当たっていないのに「6番の車に当たる」になった(2026-10-30 ユーザー指示)
+        // ただし、直線より厳しくはしない(絵のふちが直線より低い所は、これまでどおり直線で見る。弱い影・柔らかい縁まで拾って、5番を上げる動きなどが止まったため)
+        if (f.art && f.art.length) { for (var ai = 0; ai < f.art.length; ai++) pts.push([f.art[ai][0], Math.min(f.art[ai][1], f.bottom(f.art[ai][0]))]); }
+        else for (var xi = f.x0; xi <= f.x1; xi += 15) pts.push([xi, f.bottom(xi)]);
+        for (var pi = 0; pi < pts.length; pi++) {
+          var x = pts[pi][0];
           if (MECH.f2Flap && flapT() >= 1 && inF2Flap(id, x)) continue;   // 開いた2番扇動板の範囲は車に当たらない
-          var p = onFloor(id, x, f.bottom(x), of);
+          var p = onFloor(id, x, pts[pi][1], of);
           cars.forEach(function (c) {
             if (p[0] < c.x0 || p[0] > c.x1) return;
             // 5番の車が載っていても、2番前のフロアを「ピン位置(赤ラインの1穴下)」まで下げるのは許可する。5番フロアを持ち上げる時の定位置で、これを許さないと5番の車が載った状態で5番フロアを上げられない

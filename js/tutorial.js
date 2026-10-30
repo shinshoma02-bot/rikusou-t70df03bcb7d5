@@ -411,7 +411,9 @@
 
   // 10. 荷姿を低くする(2026-10-28 ユーザー指示: 6番に積んだ後、上のフロアを適切な位置に下げて固定する)
   //  3番 前(MID)・3番 後(F3r)は、7台を積むために一番上まで上げてある。積み終えたら、判定 LOADABLE.check の棚(shelf.holes)の穴まで下げてピンで固定する(宙段フロアと7台目の車に当たらない一番低い高さ)。荷姿が上限を超えると減点
-  function shelfHole(k) { var p = plan(); return p && p.shelf && p.shelf.holes ? p.shelf.holes[k] : null; }
+  // 固定デッキの3番 前は、セットピン28番(ピンの最上段)で固定する(2026-10-30 ユーザー指示。宙段フロアの車に上のフロアがめり込まない高さ。判定 LOADABLE.check の棚も、宙段フロアの上がりきった姿勢の判定を厳しくしたあと、28番になる)。3番 後は、判定の穴のまま
+  var TUT_MID_HOLE = 28;
+  function shelfHole(k) { var p = plan(); if (!p || !p.shelf || !p.shelf.holes) return null; return k === 'MID' && fixedDeck() && p.shelf.holes.MID !== null ? TUT_MID_HOLE : p.shelf.holes[k]; }
   function shelfOk(k) { var h = shelfHole(k); return h === null || (P[k] !== null && fm.holeNo(k, P[k]) === h && fm.rested(k)); }
   // フロア k を棚の穴 h まで下げる時の、いま押すボタン(下げる→穴の番号を合わせる→ピン→▼で載せる)
   function shelfBtn(i, k) {

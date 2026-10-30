@@ -1070,7 +1070,7 @@
     }
     return c.then(function (v) { return { entry: entry, img: v.img, flipImg: v.flipImg, flip: false, status: 'wait' }; });
   }
-  var MAX_REDRAW = 60;
+  var MAX_REDRAW = 150;   // 宙段フロアの上がりきった姿勢の判定を厳しくした(2026-10-30)ので、7台の合格率が約5%に下がった。1回の判定は約30msなので、150回まで引き直す
   // 車の輪郭(prof)だけで「積めるか」を判定してから、通ったデッキの画像だけを読み込む(不合格の抽選では画像を読まない)
   function drawLoadableDeck(size, tries) {
     var entries = pickCars(size), r = { ok: true };
