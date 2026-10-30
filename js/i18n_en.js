@@ -189,7 +189,7 @@ window.I18N_EN = {
   "5番: 輪止めの位置を合わせる": "No.5: Set the wheel chock position",
   "6番: 輪止めの位置を合わせる": "No.6: Set the wheel chock position",
   "前側のスイッチを開く": "Open the front switch",
-  "2番 前の高さを固定(限界まで上げる)": "Raise No.2 front to the limit again",
+  "2番 前を下げてピンで固定": "Lower No.2 front and fix it with the set pin",
   "3番 後を先に下げる": "Lower No.3 rear first",
   "3番 前を下げてピンで固定": "Lower No.3 front and fix it with the pin",
   "3番 後を下げてピンで固定": "Lower No.3 rear and fix it with the pin",

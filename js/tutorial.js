@@ -233,7 +233,7 @@
     for (var b = 0; b < 80 && fm.pinTarget(k) > h; b++) fm.stepPinTarget(k, -1);
     fm.togglePin(k); await sleep(60);
     fm.holdStart(k, 1);
-    for (var g = 0; g < 400; g++) { await sleep(15); if (fm.rested(k) && Math.abs(e.off - off) < 0.6) break; }
+    for (var g = 0; g < 400; g++) { await sleep(15); if (fm.rested(k) && Math.abs(e.off - off) < 1.4) break; }   // 2番 前は、ピンに載った所で0.6pxほど上に止まる。離すのが遅れて押し続けると、5番フロアが持ち上がってしまう(2026-10-30)
     fm.holdStop(); await sleep(60);
   };
   Auto.stopPin = async function () { if (plan() && plan().pin) fm.setStopPinHole(plan().pin); if (!fm.stopPin.inserted) fm.toggleStopPin(); await sleep(100); };
@@ -416,9 +416,21 @@
   //  3番 前(MID)・3番 後(F3r)は、7台を積むために一番上まで上げてある。積み終えたら、判定 LOADABLE.check の棚(shelf.holes)の穴まで下げてピンで固定する(宙段フロアと7台目の車に当たらない一番低い高さ)。荷姿が上限を超えると減点
   // 固定デッキの3番 前は、セットピン28番(ピンの最上段)で固定する(2026-10-30 ユーザー指示。宙段フロアの車に上のフロアがめり込まない高さ。判定 LOADABLE.check の棚も、宙段フロアの上がりきった姿勢の判定を厳しくしたあと、28番になる)。3番 後は、判定の穴のまま
   var TUT_MID_HOLE = 28;
+  // 2番 前の目標の穴(2026-10-30 ユーザー指示「2番 前を一番上で固定しているのが問題。低くなるように固定して」)。
+  // 判定(積む前の最低の高さ=棚)は、宙段フロアが動く間も含めた高さで、一番上になる。積み終えて宙段フロアがピンで止まったあとは、下の車と宙段の車に当たらなければ、ずっと低くできる。
+  // 今の状態(車・宙段フロア・3番 前のピン28番)で、動かす判定(poseProblem)が通る一番低い穴を探して、その1つ上を使う
+  function f2Hole() {
+    var cur = fm.curOffs(), mid = Math.max(cur.MID, fm.offOfHole('MID', TUT_MID_HOLE));   // 3番 前をピン28番に載せた時のフロアの位置(少し低くなる)
+    for (var h = 1; h <= 25; h++) {
+      var cand = Object.assign({}, cur, { F2f: fm.offOfHole('F2f', h), MID: mid });
+      if (!fm.poseProblem(['F2'], cand)) return Math.min(25, h + 1);
+    }
+    return 25;
+  }
   function shelfHole(k) {
     var p = plan(); if (!p) return null;
     if (k === 'F1f' || k === 'F1r') { var o = p.f1offs && p.f1offs[k]; return o === undefined || o === null ? null : fm.holeNo(k, o) + 1; }   // 1番フロア: 4番の車の屋根に当たらない一番低い高さの穴の、1つ上(判定の最低位置では、絵で見ると4番の車に約10pxめり込んだため。1穴=約7px)
+    if (k === 'F2f') return f2Hole();   // 2番 前: 6番まで積んだあとの、下の車(4・5・6番)と宙段フロアの車に当たらない一番低い穴の、1つ上(余裕)
     if (!p.shelf || !p.shelf.holes) return null;
     return k === 'MID' && fixedDeck() && p.shelf.holes.MID !== null ? TUT_MID_HOLE : p.shelf.holes[k];
   }
@@ -443,9 +455,9 @@
     if (E[k].off > off + 0.5) return lab + ': 下げ過ぎです。{UP}で少し上げる(ピンは穴より上のフロアにしか差せません)';
     return fm.pinTarget(k) === h ? lab + ': 「ピン」を押す(穴 ' + h + '番)' : lab + ': ピンの穴を ' + h + ' 番に合わせる(−/＋。いま ' + fm.pinTarget(k) + ' 番)';
   }
-  add({ c: 10, info: true, t: '荷姿の高さを低くする', x: function () { var p = plan(); return '7台とも積めました。いま、3番 前・3番 後は、車を積むために一番上まで上げたままです。積み込みが終わったら、上のフロアは、下の車や宙段フロアに当たらない範囲で、できるだけ低く下げて、セットピンで固定します(2番 前 → 3番 前 → 3番 後の順)。画面上の「荷姿の高さ」(積んだ状態の一番高い所)が、高さ制限(4.1m。標準は3.8m)を超えると減点されるからです。この荷物では、3番 前を ' + (shelfHole('MID') || '-') + ' 番、3番 後を ' + (shelfHole('F3r') || '-') + ' 番の穴の高さにします(計算で出した、当たらない一番低い高さです)。'; }, skip: function () { return !plan() || shelfHole('MID') === null; }, hl: function () { return el('modeBarHeight'); } });
-  add({ c: 10, t: '前側のスイッチを開く', skip: function () { return !plan() || shelfHole('MID') === null || (window.SWITCH_UI && window.SWITCH_UI.current === 'front'); }, x: '前側の2番 前を、先に限界まで上げ直します。前のスイッチ枠(1番・2番)をタップしてください。', hint: '絵の左寄り、運転席の後ろの柱の近くです。', ring: 'front', done: function () { return window.SWITCH_UI.current === 'front'; }, fix: function () { openPanel('front'); } });
-  add({ c: 10, t: '2番 前の高さを固定(限界まで上げる)', skip: function () { return !plan() || shelfHole('MID') === null; }, x: '6番まで積めたので、上のフロアの高さを固定していきます。順番は 2番 前 → 3番 前・3番 後です。まず2番 前の {UP} を、止まるまで押し続けて、その高さで固定します(ピンは差したままでOKです)。', sub: function () { return E.F2f.off <= f2Lim() ? '出来ました。' : '{UP}を押し続ける(止まるまで)'; }, hint: '2番 前は、{UP}でリミットスイッチが働くところまで上がります。', enter: function () { openPanel('front'); }, hl: function () { return E.F2f.off <= f2Lim() ? [] : swBtn(2, 'up'); }, done: function () { return E.F2f.off <= f2Lim(); }, fix: async function () { openPanel('front'); fm.holdStart('F2f', -1); for (var g = 0; g < 900 && E.F2f.off > f2Lim(); g++) await sleep(30); fm.holdStop(); await sleep(150); } });
+  add({ c: 10, info: true, t: '荷姿の高さを低くする', x: function () { var p = plan(); return '7台とも積めました。いま、3番 前・3番 後は、車を積むために一番上まで上げたままです。積み込みが終わったら、上のフロアは、下の車や宙段フロアに当たらない範囲で、できるだけ低く下げて、セットピンで固定します(2番 前 → 3番 前 → 3番 後の順)。画面上の「荷姿の高さ」(積んだ状態の一番高い所)が、高さ制限(4.1m。標準は3.8m)を超えると減点されるからです。この荷物では、2番 前を ' + (shelfHole('F2f') || '-') + ' 番、3番 前を ' + (shelfHole('MID') || '-') + ' 番、3番 後を ' + (shelfHole('F3r') || '-') + ' 番の穴の高さにします(計算で出した、当たらない一番低い高さです)。'; }, skip: function () { return !plan() || shelfHole('MID') === null; }, hl: function () { return el('modeBarHeight'); } });
+  add({ c: 10, t: '前側のスイッチを開く', skip: function () { return !plan() || shelfHole('MID') === null || (window.SWITCH_UI && window.SWITCH_UI.current === 'front'); }, x: '最初に2番 前の高さを決めます。前のスイッチ枠(1番・2番)をタップして、前側の操作盤を出してください。', hint: '絵の左寄り、運転席の後ろの柱の近くです。', ring: 'front', done: function () { return window.SWITCH_UI.current === 'front'; }, fix: function () { openPanel('front'); } });
+  add({ c: 10, t: '2番 前を下げてピンで固定', skip: function () { return !plan() || shelfHole('MID') === null; }, x: function () { var h = shelfHole('F2f'); return '6番まで積めたので、上のフロアを低くして固定していきます。順番は 2番 前 → 3番 前・3番 後です。まず2番 前を、' + h + ' 番の穴の高さまで下げます(下の車や宙段フロアの車に当たらない低さです)。手順: ピンを抜く({UP}を一瞬押してフロアを浮かせてから「抜く」)→ {DOWN}で、ピンの穴の番号(フロアの少し下の穴)が ' + h + ' になる高さまで下げる → 「ピン」で差す → {DOWN}でフロアをピンに載せる。'; }, sub: function () { return shelfSub('F2f', '2番 前'); }, hint: '「ピン」ボタンの横の −/＋ で、ピンの穴の番号を変えられます(ピンを抜いている間だけ)。穴の番号は大きいほど高い位置です。', enter: function () { openPanel('front'); }, hl: function () { return shelfBtn(2, 'F2f'); }, done: function () { return shelfOk('F2f'); }, fix: async function () { openPanel('front'); await Auto.restHole('F2f', shelfHole('F2f')); } });
   add({ c: 10, t: '後ろ側のスイッチを開く', skip: function () { return !plan() || shelfHole('MID') === null || (window.SWITCH_UI && window.SWITCH_UI.current === 'rear'); }, x: '後ろのスイッチ枠をタップして、後ろ側の操作盤を出してください。', hint: '絵の中央よりやや右、柱の下にある小さなスイッチです。', ring: 'rear', done: function () { return window.SWITCH_UI.current === 'rear'; }, fix: function () { openPanel('rear'); } });
   function f3rLow() { return P.F3r === null && E.F3r.off >= -30; }
   add({ c: 10, t: '3番 後を先に下げる', skip: function () { return !plan() || shelfHole('MID') === null; }, x: '3番 前を下げると3番 後が上がるため、先に3番 後を下げて余裕を作ります。ピンを抜いて({UP}を一瞬押してから「抜く」)、{DOWN}で約-24(走行位置の近く)まで下げてください。', sub: function () { if (f3rLow()) return '出来ました。'; if (P.F3r !== null) return fm.rested('F3r') && E.F3r.off >= P.F3r - 1 ? '① {UP}を一瞬だけ押して、フロアをピンから浮かせる → ②「抜く」でピンを抜く' : '②「抜く」ボタンでピンを抜く'; return '{DOWN}を押し続けて、約-24まで下げる(いま ' + Math.round(E.F3r.off) + ')'; }, hint: 'ピンが差さったままだと下がりません。', enter: function () { openPanel('rear'); }, hl: function () { return f3rLow() ? [] : (P.F3r !== null ? swBtn(1, fm.rested('F3r') && E.F3r.off >= P.F3r - 1 ? 'up' : 'pin') : swBtn(1, 'down')); }, done: f3rLow, fix: async function () { openPanel('rear'); await Auto.unpinHard('F3r'); await Auto.move('F3r', -20); } });
