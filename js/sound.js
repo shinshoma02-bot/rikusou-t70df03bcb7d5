@@ -607,7 +607,7 @@
   }, 150);
 
   // 音の設定のポップアップ(BGM・SE の音量とON/OFF)。画面の『設定』ボタン(js/settings.js)の『音』から開く(window.SFX_UI.open())
-  var btn = null, panel = null, rngBgm = null, rngSe = null, outBgm = null, outSe = null, togBtn = null;
+  var btn = null, panel = null, rngBgm = null, rngSe = null, outBgm = null, outSe = null, togBtn = null, statusEl = null, testBtn = null;
   var STYLE = '#sfxPanel{position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box}' +
     '#sfxPanel[hidden]{display:none}' +
     '#sfxPanel .sfx-box{width:min(340px,100%);background:#16202c;color:#dfe8f2;border:2px solid #4b6078;border-radius:10px;padding:18px 18px 16px;font-size:15px;box-sizing:border-box}' +
@@ -622,11 +622,21 @@
   function updateBtn() {
     if (btn) btn.textContent = on ? '音設定' : '音:OFF';
     if (togBtn) { togBtn.textContent = on ? '音:ON(タップでOFF)' : '音:OFF(タップでON)'; togBtn.className = on ? 'sfx-btn on' : 'sfx-btn'; }
+    updateStatus();
+  }
+  // 音が出ない原因を見分けるための表示(S9・2026-10-31)。音のON/OFF・音の仕組みの状態・iPhone の消音スイッチ・タップの案内
+  function updateStatus() {
+    if (!statusEl) return;
+    var st = AC ? AC.state : '未開始(画面をタップすると始まります)';
+    var lines = ['音: ' + (on ? 'ON' : 'OFF(音が出ません。下の切替でONに)'), '音の仕組み: ' + st];
+    if (/iPhone|iPad|iPod/.test(navigator.userAgent)) lines.push('iPhone は、横の消音スイッチ(マナーモード)が入っていると音が出ません。');
+    if (on && AC && AC.state !== 'running') lines.push('音が出ない時は、画面を一度タップしてください。それでも出ない時は、ページを開き直してください。');
+    statusEl.innerHTML = lines.join('<br>');
   }
   function openPanel() {
     if (!panel) return;
     rngBgm.value = vol.bgm; rngSe.value = vol.se; outBgm.textContent = vol.bgm + '%'; outSe.textContent = vol.se + '%';
-    updateBtn(); panel.hidden = false;
+    updateBtn(); updateStatus(); panel.hidden = false;
   }
   function closePanel() { if (panel) panel.hidden = true; }
   function buildPanel() {
@@ -636,6 +646,8 @@
       '<h2>音の設定</h2>' +
       '<div class="sfx-row"><div class="sfx-label"><span>BGM（音楽）</span><b id="sfxBgmOut"></b></div><input type="range" id="sfxBgm" min="0" max="100" step="1"></div>' +
       '<div class="sfx-row"><div class="sfx-label"><span>SE（効果音）</span><b id="sfxSeOut"></b></div><input type="range" id="sfxSe" min="0" max="100" step="1"></div>' +
+      '<div id="sfxStatus" style="margin-top:12px;font-size:13px;line-height:1.5;color:#aebccb"></div>' +
+      '<button type="button" class="sfx-btn" id="sfxTest">テスト音を鳴らす</button>' +
       '<button type="button" class="sfx-btn" id="sfxTog"></button>' +
       '<button type="button" class="sfx-btn" id="sfxClose">閉じる</button>' +
       '</div>';
@@ -643,6 +655,8 @@
     rngBgm = panel.querySelector('#sfxBgm'); rngSe = panel.querySelector('#sfxSe');
     outBgm = panel.querySelector('#sfxBgmOut'); outSe = panel.querySelector('#sfxSeOut');
     togBtn = panel.querySelector('#sfxTog');
+    statusEl = panel.querySelector('#sfxStatus'); testBtn = panel.querySelector('#sfxTest');
+    testBtn.addEventListener('click', function () { unlock(); if (on) window.SFX.click(); updateStatus(); });
     // 画面の操作(ゲームのタップ)を、ポップアップの中で止める。音の有効化だけは通す
     panel.addEventListener('pointerdown', function (e) { unlock(); e.stopPropagation(); });
     panel.addEventListener('click', function (e) { e.stopPropagation(); if (e.target === panel) closePanel(); });
