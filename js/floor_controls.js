@@ -89,27 +89,71 @@
       open(g);
     }
   }, 500);
-  // 扇動板・スライド板のカード(前側の操作盤の中。アイコン付きのボタン。押すと動き、開いたまま操作できる)
+  // ---- 扇動板・スライド板・道板のアイコン(2026-10-31 ユーザー指示: 作った画像ではなく、ゲームの絵にする)----
+  // 4番扇動板・2番扇動板・5番のピンは、ゲームの部品の絵(assets/semi-6/parts)をそのまま使う。スライド板・道板は、ゲームの中でコードで描いている板(main.js の drawSlidePlate・drawRampPlate)と同じ色・形で、小さな絵を描く(道板は長いので、一部を切り取った形)
+  var PARTS = 'assets/semi-6/parts/';
+  function drawnIcon(w, h, draw) {
+    var c = document.createElement('canvas'); c.width = w * 2; c.height = h * 2;
+    var g = c.getContext('2d'); g.scale(2, 2); draw(g, w, h);
+    return c.toDataURL('image/png');
+  }
+  function slideIconSrc() {   // 緑の網の床・側面の枠・先端の赤い帯
+    return drawnIcon(56, 22, function (g, w, h) {
+      var x = 1.5, y = 5, len = w - 3, th = 13, mesh = 4;
+      g.fillStyle = '#9fe9dc'; g.fillRect(x, y, len, mesh);
+      g.strokeStyle = 'rgba(20,90,80,0.75)'; g.lineWidth = 1;
+      g.save(); g.beginPath(); g.rect(x, y, len, mesh); g.clip(); g.beginPath();
+      for (var d = -mesh; d < len; d += 5) { g.moveTo(x + d, y + mesh); g.lineTo(x + d + mesh, y); g.moveTo(x + d + mesh, y + mesh); g.lineTo(x + d, y); }
+      g.stroke(); g.restore();
+      var gr = g.createLinearGradient(0, y + mesh, 0, y + th); gr.addColorStop(0, '#5fe3cd'); gr.addColorStop(0.45, '#2cc9b0'); gr.addColorStop(1, '#138d7b');
+      g.fillStyle = gr; g.fillRect(x, y + mesh, len, th - mesh);
+      g.fillStyle = '#e2574c'; g.fillRect(x + len - 9, y, 9, th);
+      g.strokeStyle = '#0d2b27'; g.lineWidth = 1.2; g.strokeRect(x, y, len, th);
+    });
+  }
+  function rampIconSrc() {   // 銀色の道板(縞の滑り止め)。長いので、斜めに置いた板の一部を切り取った形
+    return drawnIcon(48, 48, function (g, w, h) {
+      g.save(); g.translate(-6, 14); g.rotate(16 * Math.PI / 180);
+      var len = 80, th = 15, grad = g.createLinearGradient(0, 0, 0, th);
+      grad.addColorStop(0, '#e3e8eb'); grad.addColorStop(0.35, '#b7c0c5'); grad.addColorStop(1, '#6d767c');
+      g.fillStyle = grad; g.fillRect(0, 0, len, th);
+      g.save(); g.beginPath(); g.rect(0, 0, len, th); g.clip();
+      g.strokeStyle = 'rgba(0,0,0,0.3)'; g.lineWidth = 1.5;
+      for (var x = 6; x < len; x += 9) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x, th); g.stroke(); }
+      g.restore();
+      g.strokeStyle = '#2c3135'; g.lineWidth = 1.4; g.strokeRect(0, 0, len, th);
+      g.restore();
+    });
+  }
+  (function () {   // 道板ボタンのアイコン(画面の「道板を出す」)も、ゲームの絵にする
+    var st = document.createElement('style'); st.textContent = '#btnRamp::before { background-image: url(' + rampIconSrc() + ') !important; }';
+    document.head.appendChild(st);
+  })();
+  // 扇動板・スライド板のカード(前側の操作盤の中。押すと動き、開いたまま操作できる)。「上段フロア」= スライド板・2番扇動板 / 「下段フロア」= 4番扇動板・5番のピン を、2個ずつ横に並べる(2026-10-31 ユーザー指示)
   var plateBtns = [];
   function plateCard() {
     var card = document.createElement('div');
     card.className = 'swCard plateCard';
-    var lab = document.createElement('div'); lab.className = 'swLabel'; lab.textContent = '扇動板・スライド板'; card.appendChild(lab);
     plateBtns = [
-      { key: 'slide', icon: 'ic_slide', label: function () { return fm.MECH.slide ? 'スライド板を格納' : 'スライド板を搬出'; }, on: function () { return fm.MECH.slide; }, run: fm.toggleSlide },
-      { key: 'flap2', icon: 'ic_flap2', label: function () { return fm.MECH.f2Flap ? '2番扇動板を閉じる' : '2番扇動板を開く'; }, on: function () { return fm.MECH.f2Flap; }, run: fm.toggleF2Flap },
-      { key: 'bridge', icon: 'ic_bridge', label: function () { return fm.MECH.bridge ? '4番扇動板を格納' : '4番扇動板を搬出'; }, on: function () { return fm.MECH.bridge; }, run: fm.toggleBridge },
-      // 5番のスロープのピン(赤いレバー)。画面の赤いレバーは小さくて触りにくい、というレビューがあったので、ボタンでも操作できるようにした(2026-10-31)。「on」=ピンが出ている(掛かっている)
-      { key: 'stopper', iconSrc: function () { return 'assets/semi-6/parts/slope_latch_bar' + (fm.MECH.stopper ? '' : '_up') + '.png?v=1'; }, label: function () { return fm.MECH.stopper ? '5番のピンを外す' : '5番のピンを戻す'; }, on: function () { return fm.MECH.stopper; }, run: fm.toggleStopper }
-    ].map(function (it) {
-      var b = document.createElement('button');
-      b.type = 'button'; b.className = 'plateBtn'; b.setAttribute('data-plate', it.key);   // data-plate: チュートリアルのガイドが指す目印
-      // stopper だけは、ゲームの絵のレバー(赤い玉の付いた棒。ピンが掛かっている時は下、外れている時は上)をそのまま使う(2026-10-31 ユーザー指示)
-      b.innerHTML = '<img src="' + (it.iconSrc ? it.iconSrc() : 'assets/common/ui/' + it.icon + '.png?v=279.1.96') + '" alt="" class="plateIcon' + (it.iconSrc ? ' plateIconWide' : '') + '">' + '<span></span>';
-      b.addEventListener('click', function () { it.run(); renderMechButtons(); });
-      card.appendChild(b);
-      it.el = b;
-      return it;
+      { key: 'slide', group: 0, icon: function () { return '<img class="plateIcon" alt="" src="' + slideIconSrc() + '" style="width:56px;height:22px">'; }, label: function () { return fm.MECH.slide ? 'スライド板を格納' : 'スライド板を搬出'; }, on: function () { return fm.MECH.slide; }, run: fm.toggleSlide },
+      { key: 'flap2', group: 0, icon: function () { return '<img class="plateIcon" alt="" src="' + PARTS + 'flap_f2_open.png?v=1" style="width:36px;height:35px">'; }, label: function () { return fm.MECH.f2Flap ? '2番扇動板を閉じる' : '2番扇動板を開く'; }, on: function () { return fm.MECH.f2Flap; }, run: fm.toggleF2Flap },
+      { key: 'bridge', group: 1, icon: function () { return '<span class="plateIconRow"><img alt="" src="' + PARTS + 'flap_f4_base.png?v=1"><img alt="" src="' + PARTS + 'flap_f4_mid.png?v=1"><img alt="" src="' + PARTS + 'flap_f4_tip.png?v=1"></span>'; }, label: function () { return fm.MECH.bridge ? '4番扇動板を格納' : '4番扇動板を搬出'; }, on: function () { return fm.MECH.bridge; }, run: fm.toggleBridge },
+      // 5番のスロープのピン(赤いレバー)。画面の赤いレバーは小さくて触りにくい、というレビューがあったので、ボタンでも操作できるようにした(2026-10-31)。「on」=ピンが出ている(掛かっている)。絵はゲームのレバー(掛かっている時は下、外れている時は上)
+      { key: 'stopper', group: 1, iconSrc: function () { return PARTS + 'slope_latch_bar' + (fm.MECH.stopper ? '' : '_up') + '.png?v=1'; }, icon: function () { return '<img class="plateIcon" alt="" src="' + this.iconSrc() + '" style="width:66px;height:40px">'; }, label: function () { return fm.MECH.stopper ? '5番のピンを外す' : '5番のピンを戻す'; }, on: function () { return fm.MECH.stopper; }, run: fm.toggleStopper }
+    ];
+    ['上段フロア', '下段フロア'].forEach(function (name, gi) {
+      var grp = document.createElement('div'); grp.className = 'plateGroup';
+      var lab = document.createElement('div'); lab.className = 'swLabel'; lab.textContent = name; grp.appendChild(lab);
+      var row = document.createElement('div'); row.className = 'plateRow'; grp.appendChild(row);
+      plateBtns.filter(function (it) { return it.group === gi; }).forEach(function (it) {
+        var b = document.createElement('button');
+        b.type = 'button'; b.className = 'plateBtn'; b.setAttribute('data-plate', it.key);   // data-plate: チュートリアルのガイドが指す目印
+        b.innerHTML = '<span class="plateIconBox">' + it.icon() + '</span><span class="plateText"></span>';
+        b.addEventListener('click', function () { it.run(); renderMechButtons(); });
+        row.appendChild(b);
+        it.el = b;
+      });
+      card.appendChild(grp);
     });
     renderPlate();
     return card;
@@ -117,7 +161,7 @@
   function renderPlate() {
     plateBtns.forEach(function (it) {
       if (!it.el) return;
-      it.el.querySelector('span').textContent = it.label();
+      it.el.querySelector('.plateText').textContent = it.label();
       if (it.iconSrc) { var im = it.el.querySelector('img'), src = it.iconSrc(); if (im && im.getAttribute('src') !== src) im.setAttribute('src', src); }
       it.el.classList.toggle('on', !!it.on());
     });
