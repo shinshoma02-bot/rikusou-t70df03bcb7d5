@@ -83,6 +83,8 @@ window.I18N_EN = {
  "道板を出す": "Lower the ramp",
  "道板をしまう": "Stow the ramp",
  "4番扇動板を搬出": "Extend No.4 bridge plate",
+ "5番のピンを外す": "Release No.5 pin",
+ "5番のピンを戻す": "Set No.5 pin",
  "4番扇動板を格納": "Stow No.4 bridge plate",
  "スライド板を格納": "Stow the slide plate",
  "スライド板を搬出": "Extend the slide plate",

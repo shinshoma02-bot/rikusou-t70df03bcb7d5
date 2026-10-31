@@ -98,7 +98,9 @@
     plateBtns = [
       { key: 'slide', icon: 'ic_slide', label: function () { return fm.MECH.slide ? 'スライド板を格納' : 'スライド板を搬出'; }, on: function () { return fm.MECH.slide; }, run: fm.toggleSlide },
       { key: 'flap2', icon: 'ic_flap2', label: function () { return fm.MECH.f2Flap ? '2番扇動板を閉じる' : '2番扇動板を開く'; }, on: function () { return fm.MECH.f2Flap; }, run: fm.toggleF2Flap },
-      { key: 'bridge', icon: 'ic_bridge', label: function () { return fm.MECH.bridge ? '4番扇動板を格納' : '4番扇動板を搬出'; }, on: function () { return fm.MECH.bridge; }, run: fm.toggleBridge }
+      { key: 'bridge', icon: 'ic_bridge', label: function () { return fm.MECH.bridge ? '4番扇動板を格納' : '4番扇動板を搬出'; }, on: function () { return fm.MECH.bridge; }, run: fm.toggleBridge },
+      // 5番のスロープのピン(赤いレバー)。画面の赤いレバーは小さくて触りにくい、というレビューがあったので、ボタンでも操作できるようにした(2026-10-31)。「on」=ピンが出ている(掛かっている)
+      { key: 'stopper', icon: 'ic_stopper', label: function () { return fm.MECH.stopper ? '5番のピンを外す' : '5番のピンを戻す'; }, on: function () { return fm.MECH.stopper; }, run: fm.toggleStopper }
     ].map(function (it) {
       var b = document.createElement('button');
       b.type = 'button'; b.className = 'plateBtn'; b.setAttribute('data-plate', it.key);   // data-plate: チュートリアルのガイドが指す目印
