@@ -100,11 +100,12 @@
       { key: 'flap2', icon: 'ic_flap2', label: function () { return fm.MECH.f2Flap ? '2番扇動板を閉じる' : '2番扇動板を開く'; }, on: function () { return fm.MECH.f2Flap; }, run: fm.toggleF2Flap },
       { key: 'bridge', icon: 'ic_bridge', label: function () { return fm.MECH.bridge ? '4番扇動板を格納' : '4番扇動板を搬出'; }, on: function () { return fm.MECH.bridge; }, run: fm.toggleBridge },
       // 5番のスロープのピン(赤いレバー)。画面の赤いレバーは小さくて触りにくい、というレビューがあったので、ボタンでも操作できるようにした(2026-10-31)。「on」=ピンが出ている(掛かっている)
-      { key: 'stopper', icon: 'ic_stopper', label: function () { return fm.MECH.stopper ? '5番のピンを外す' : '5番のピンを戻す'; }, on: function () { return fm.MECH.stopper; }, run: fm.toggleStopper }
+      { key: 'stopper', iconSrc: function () { return 'assets/semi-6/parts/slope_latch_bar' + (fm.MECH.stopper ? '' : '_up') + '.png?v=1'; }, label: function () { return fm.MECH.stopper ? '5番のピンを外す' : '5番のピンを戻す'; }, on: function () { return fm.MECH.stopper; }, run: fm.toggleStopper }
     ].map(function (it) {
       var b = document.createElement('button');
       b.type = 'button'; b.className = 'plateBtn'; b.setAttribute('data-plate', it.key);   // data-plate: チュートリアルのガイドが指す目印
-      b.innerHTML = '<img src="assets/common/ui/' + it.icon + '.png?v=279.1.96" alt="" class="plateIcon">' + '<span></span>';
+      // stopper だけは、ゲームの絵のレバー(赤い玉の付いた棒。ピンが掛かっている時は下、外れている時は上)をそのまま使う(2026-10-31 ユーザー指示)
+      b.innerHTML = '<img src="' + (it.iconSrc ? it.iconSrc() : 'assets/common/ui/' + it.icon + '.png?v=279.1.96') + '" alt="" class="plateIcon' + (it.iconSrc ? ' plateIconWide' : '') + '">' + '<span></span>';
       b.addEventListener('click', function () { it.run(); renderMechButtons(); });
       card.appendChild(b);
       it.el = b;
@@ -117,6 +118,7 @@
     plateBtns.forEach(function (it) {
       if (!it.el) return;
       it.el.querySelector('span').textContent = it.label();
+      if (it.iconSrc) { var im = it.el.querySelector('img'), src = it.iconSrc(); if (im && im.getAttribute('src') !== src) im.setAttribute('src', src); }
       it.el.classList.toggle('on', !!it.on());
     });
   }
