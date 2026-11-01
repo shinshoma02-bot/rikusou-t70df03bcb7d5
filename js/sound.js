@@ -76,6 +76,28 @@
   // ページを開いた時に、音の仕組みを作っておく(まだ鳴らない。効果音の読み込みを先に始めて、タップ前に案内を出すため)
   document.addEventListener('DOMContentLoaded', function () { ctx(); });
   document.addEventListener('visibilitychange', function () { if (!document.hidden && AC && AC.state !== 'running') { try { AC.resume(); } catch (e) { } } });
+  // 別のページへ移る時(メイン画面→チュートリアル・チュートリアル→メイン画面)は、鳴っている音を止める。
+  // 止めないと、スマホ(iPhone など)が前のページをそのまま残して(戻る・進むの高速化=bfcache)、前のページのBGMが鳴り続け、移った先のBGMと重なる(2026-11-01 ユーザー報告)。
+  // 前のページに戻ってきた時(pageshow で persisted)は、止める前の場面のBGMを鳴らし直す
+  var leftScene = null;
+  window.addEventListener('pagehide', function () {
+    try {
+      if (bgmScene !== 'off') leftScene = bgmScene;
+      bgmStopAll();
+      Object.keys(loops).forEach(function (k) { try { loops[k].stop(); } catch (e) { } delete loops[k]; });
+      if (silentEl) { try { silentEl.pause(); } catch (e) { } }
+      if (AC && AC.state === 'running') AC.suspend();
+    } catch (e) { }
+  });
+  window.addEventListener('pageshow', function (ev) {
+    if (!ev.persisted) return;   // 戻る・進むで、止めたまま残っていたページが復活した時だけ
+    try {
+      if (silentEl) { try { var pr = silentEl.play(); if (pr && pr.catch) pr.catch(function () { }); } catch (e) { } }
+      var sc = leftScene; leftScene = null;
+      var again = function () { if (sc && on) { bgmScene = 'off'; bgmActive = false; bgmSet(sc); } };
+      if (AC) { try { var rp = AC.resume(); if (rp && rp.then) rp.then(again, again); else again(); } catch (e) { again(); } } else again();
+    } catch (e) { }
+  });
 
   // 雑音(ノイズ)を、フィルタと音量の包みを通して鳴らす
   function noise(a, t, dur, type, f, q, gain, fEnd) {
