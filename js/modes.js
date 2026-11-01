@@ -69,7 +69,7 @@
     $('modeBarCars').textContent = '積込 ' + stats.docks + '台' + (state.deckSize >= 7 ? '(今回7台・宙段フロアあり)' : '');
     // 積み込んだ状態の、地面から一番高い所の高さ(今のフロアの位置で計算。高さ制限を超えると赤)
     var hm = Object.keys(state.occupied).length ? loadHeightM() : null;
-    $('modeBarHeight').textContent = hm === null ? '' : '荷姿の高さ ' + hm.toFixed(2) + 'm';
+    $('modeBarHeight').textContent = hm === null ? '' : '積んだ高さ ' + hm.toFixed(2) + 'm';
     $('modeBarHeight').style.color = hm !== null && hm > limitM() ? '#ff8080' : '';
     $('modeBarScore').textContent = 'スコア ' + score();
     $('modeBarScore').style.color = score() < 0 ? '#ff8080' : '#ffe680';
@@ -127,7 +127,7 @@
     lastHeightM = h;
     stats.cycles++;
     stats.heightPenalty += pen;
-    var msg = 'サイクル完了! 荷姿の高さ ' + h.toFixed(2) + 'm' + (pen ? '(' + lim.toFixed(1) + 'mを超過 -' + pen + '点)' : '(満点)');
+    var msg = 'サイクル完了! 積んだ高さ ' + h.toFixed(2) + 'm' + (pen ? '(' + lim.toFixed(1) + 'mを超過 -' + pen + '点)' : '(満点)');
     if (mode === 'real') { finish(true, msg); return; }
     if (mode === 'time') {   // 延長ボーナス: 回を重ねるほど少なく、このサイクルのミスが多いほど少ない
       var missesNow = stats.majors + stats.minors, missesCycle = missesNow - cycleStartMisses;
@@ -144,7 +144,7 @@
   // 走り去る間(画面の外に出るまで)は操作を止める。演出が無い環境(semi-6b など)は、すぐ初期化する
   var turning = false;
   function resetAllForCycle() {
-    if (fm.resetAll) fm.resetAll(); else fm.initPins && fm.initPins();   // 道板・扇動板・落し蓋・スライド板・ジャッキ・タイヤ・ロック・フロア・ピンを初期位置へ
+    if (fm.resetAll) fm.resetAll(); else fm.initPins && fm.initPins();   // 道板・扇動板・落とし蓋・スライド板・ジャッキ・タイヤ・ロック・フロア・ピンを初期位置へ
     state.resetTrailer();
     refreshBar();
   }
@@ -209,7 +209,7 @@
     else lines.push(reason);
     lines.push('積み込み ' + stats.docks + '台 / ミス 重' + stats.majors + '・軽' + stats.minors + ' / 完了サイクル ' + stats.cycles);
     if (stats.dispatchFound || stats.dispatchFalse || stats.dispatchMissed) lines.push('配車連絡: 積めない荷物に気づけた ' + stats.dispatchFound + '回(ボーナス +' + stats.bonus + '点) / 積めるのに連絡 ' + stats.dispatchFalse + '回 / 気づけず ' + stats.dispatchMissed + '回');
-    if (lastHeightM !== null) lines.push('荷姿の高さ ' + lastHeightM.toFixed(2) + 'm');
+    if (lastHeightM !== null) lines.push('積んだ高さ ' + lastHeightM.toFixed(2) + 'm');
     if (stats.carry) lines.push('前回の事故の損害 ' + stats.carry + '点からのスタート');
     lines.push('所要時間 ' + fmtTime(elapsed()));
     $('resultBody').innerHTML = '';

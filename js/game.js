@@ -1128,7 +1128,7 @@
       state.deckDrawn++; state.deckImpossible = !!items.impossible; state.dispatchDone = false;
       state.deck = items; state.sel = 0; state.deckSize = size; state.deckTries = items.drawTries;
       if (window.GAME_MODE && window.GAME_MODE.onTurnStart) window.GAME_MODE.onTurnStart();   // 新しい荷物が届いた(ターン開始)
-      state.deckMinH = items.loadable && isFinite(items.loadable.H) ? items.loadable.H : null;   // この組み合わせをいちばん低く積める荷姿の高さ(6台・7台とも)
+      state.deckMinH = items.loadable && isFinite(items.loadable.H) ? items.loadable.H : null;   // この組み合わせをいちばん低く積める積んだ高さ(6台・7台とも)
       refreshDeck();
       idleHint();
     }).catch(function (err) {
@@ -1153,7 +1153,7 @@
   var btnChockFront = document.getElementById('btnChockFront');
   var btnChockRear = document.getElementById('btnChockRear');
   var btnLid = document.getElementById('btnLid');
-  var STOP_NAME = { stopper: '輪止め', hole: '落とし穴', chock: '輪止め' };
+  var STOP_NAME = { stopper: '輪止め', hole: 'タイヤ落とし', chock: '輪止め' };
   function describeStop(num) {
     var slot = cfg.slots[num], c = chocks[num], lim = chockLimits(num), s = activeStop(num);
     if (c && c.set) {
@@ -1162,7 +1162,7 @@
       return '輪止め セット中(' + (cm < 0 ? '基準より前へ' : (slot.stopKind === 'none' ? '基準より後ろへ' : (slot.stopKind === 'hole' ? '穴の手前 ' : '輪止めの手前 '))) + Math.abs(cm) + 'cm' + (cm === 0 ? '・基準位置' : '') + ')';
     }
     if (slot.stopKind === 'stopper') return '元の輪止めで停止(追加の輪止めは任意)';
-    if (slot.stopKind === 'hole') return lidOpen[num] ? '落し蓋を開けた(タイヤが落ち込んで停止)' : '落し蓋を閉じている(停止するには蓋を開けるか、輪止めをセット)';
+    if (slot.stopKind === 'hole') return lidOpen[num] ? '落とし蓋を開けた(タイヤが落ち込んで停止)' : '落とし蓋を閉じている(停止するには蓋を開けるか、輪止めをセット)';
     return s ? '' : '輪止め未セット(5・6番は輪止めが必須)';
   }
   // ---- 固縛(D43。マニュアル p3): 車を止めて輪止めをしたあと、タイヤの前後にフックを掛け、荷締機のハンドルを回してワイヤを張る ----
@@ -1201,8 +1201,8 @@
     btnChockSet.disabled = btnChockFront.disabled = btnChockRear.disabled = btnLid.disabled = none;
     btnLid.style.display = (num && cfg.slots[num].stopKind === 'hole') ? '' : 'none';
     Array.prototype.forEach.call(document.querySelectorAll('#slotSel button'), function (b) { b.classList.toggle('on', b.dataset.slot === num); });
-    if (none) { btnChockSet.textContent = '輪止めをセット'; chockLabelEl.textContent = '上のボタンでスロットを選ぶと、輪止め・落し蓋を操作できます'; return; }
-    if (cfg.slots[num].noChock) {   // 宙段フロア: 輪止めも落し蓋の操作も無い
+    if (none) { btnChockSet.textContent = '輪止めをセット'; chockLabelEl.textContent = '上のボタンでスロットを選ぶと、輪止め・落とし蓋を操作できます'; return; }
+    if (cfg.slots[num].noChock) {   // 宙段フロア: 輪止めも落とし蓋の操作も無い
       btnChockSet.disabled = btnChockFront.disabled = btnChockRear.disabled = btnLid.disabled = true;
       btnLid.style.display = 'none'; btnChockSet.textContent = '輪止めをセット';
       chockLabelEl.textContent = '宙: 輪止めはありません。宙段フロアを上げると、落としの穴が最初から空いています(タイヤが落ち込んで停止)';
@@ -1212,7 +1212,7 @@
     btnChockSet.textContent = set ? '輪止めを外す' : '輪止めをセット';
     btnChockFront.disabled = !set || c.step <= lim.min;
     btnChockRear.disabled = !set || c.step >= lim.max;
-    btnLid.textContent = lidOpen[num] ? '落し蓋を閉じる' : '落し蓋を開ける';
+    btnLid.textContent = lidOpen[num] ? '落とし蓋を閉じる' : '落とし蓋を開ける';
     chockLabelEl.textContent = num + '番: ' + describeStop(num) +
       ' [輪止めの位置 ' + (lim.min < 0 ? '前' + -lim.min * lim.stepCm + 'cm〜後' + lim.max * lim.stepCm + 'cm' : (cfg.slots[num].stopKind === 'hole' ? '穴' : '輪止め') + 'の手前' + lim.min * lim.stepCm + '〜' + lim.max * lim.stepCm + 'cm') + ']';
   }
@@ -1232,7 +1232,7 @@
   }  function editGuard() {
     var num = state.targetSlot;
     if (!num) return null;
-    if (cfg.slots[num].noChock) { setStatus('宙段フロアには輪止めも落し蓋の操作もありません(上げると穴が空いています)。'); return null; }
+    if (cfg.slots[num].noChock) { setStatus('宙段フロアには輪止めも落とし蓋の操作もありません(上げると穴が空いています)。'); return null; }
     if (!canEditStops(num)) { setStatus('車が輪止めの位置まで近づいたので、もう動かせません。'); return null; }
     return num;
   }
@@ -1241,7 +1241,7 @@
     var num = editGuard(); if (!num) return;
     var c = chocks[num] || (chocks[num] = { set: false, step: 0 }), lim = chockLimits(num);
     if (c.set) { c.set = false; afterStopEdit(num, '輪止めを外しました。'); return; }
-    if (cfg.slots[num].stopKind === 'hole' && lidOpen[num]) { setStatus('落し蓋を開けたままでは輪止めを置けません。先に蓋を閉じてください。'); return; }
+    if (cfg.slots[num].stopKind === 'hole' && lidOpen[num]) { setStatus('落とし蓋を開けたままでは輪止めを置けません。先に蓋を閉じてください。'); return; }
     c.set = true; c.step = Math.max(lim.min, Math.min(lim.max, cfg.slots[num].chockStart === 'front' ? lim.min : 0));   // 5・6番は基準位置の穴、1〜4番は後方1段目。5番は、一番前(キャビン側)の穴が標準(2026-10-09 ユーザー指示)
     afterStopEdit(num, '輪止めをセットしました。');
   });
@@ -1260,7 +1260,7 @@
     var num = editGuard(); if (!num) return;
     if (!lidOpen[num] && chocks[num] && chocks[num].set) { setStatus('蓋の上に輪止めがあります。先に輪止めを外してください。'); return; }
     lidOpen[num] = !lidOpen[num];
-    afterStopEdit(num, lidOpen[num] ? '落し蓋を開けました。' : '落し蓋を閉じました。');
+    afterStopEdit(num, lidOpen[num] ? '落とし蓋を開けました。' : '落とし蓋を閉じました。');
   });
   // 経路を(フロアの今の位置で)引き直す: 座標・長さ・各スロットの基準点までの距離
   function rebuildPath(car) {
@@ -1295,7 +1295,7 @@
   function selectSlot(num) {
     state.targetSlot = state.targetSlot === num ? null : num;
     updateChockUi();
-    if (state.targetSlot) setStatus(num + '番の輪止め・落し蓋を操作できます。');
+    if (state.targetSlot) setStatus(num + '番の輪止め・落とし蓋を操作できます。');
   }
   state.selectSlot = selectSlot;
   state.routeProblems = routeProblems;   // (確認用)今の車が通れない理由の一覧
@@ -1845,7 +1845,7 @@
         // 止める物が何も無いまま奥の限界まで行ってしまった
         car.ranOut = true;
         recordMiss('止める物が無いまま奥の限界まで進んだ');
-        setStatus('止める物がありません!輪止めをセットするか落し蓋を開けてください。(ミス: ' + state.misses + ')');
+        setStatus('止める物がありません!輪止めをセットするか落とし蓋を開けてください。(ミス: ' + state.misses + ')');
       }
     } else if (car.progress < maxProgress - 30) {
       car.ranOut = false;

@@ -2062,7 +2062,7 @@
         ctx.fillStyle = color; ctx.fillText(label, 0, -10 - h - 12);
       }
     }
-    var KIND_LABEL = { chock: '輪止め', stopper: '輪止め', hole: '落とし穴' };
+    var KIND_LABEL = { chock: '輪止め', stopper: '輪止め', hole: 'タイヤ落とし' };
     var KIND_COLOR = { chock: '#ffb020', stopper: '#c8d0d4', hole: '#6cc8ff' };
     Object.keys(cfg.slots).forEach(function (num) {
       var slot = cfg.slots[num], sel = st.targetSlot === num, lim = st.chockLimits(num);
@@ -2076,7 +2076,7 @@
         }
         // 輪止めが無い間も、元のタイヤストッパ・落し蓋の位置は示す
         if (!stop && slot.stopKind === 'hole') {
-          placeOnSlot(slot, 0, function () { arrow('落し蓋(閉)', 'rgba(150,170,180,0.95)', true); });
+          placeOnSlot(slot, 0, function () { arrow('落とし蓋(閉)', 'rgba(150,170,180,0.95)', true); });
         }
       }
       if (!stop) return;
