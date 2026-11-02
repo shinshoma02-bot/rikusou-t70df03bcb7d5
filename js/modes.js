@@ -185,7 +185,7 @@
 
   var CARRY_KEY = 'carCarryPenalty', CARRY_BASE = 200;   // 事故1回の損害(点)。難易度の倍率を掛ける
   // ---- 終了・結果 ----
-  function finish(cleared, reason, accident) {
+  function finish(cleared, reason, accident, departed) {   // departed: 『出発』で終わった時だけ、道板の上の車による出発事故を調べる(2026-11-03 バグ修正: ミスで終わった時に、理由が『道板の上で発進して落ちた』に書き換わっていた)
     if (ended) return;
     ended = true;
     clearInterval(timerId);
@@ -195,7 +195,7 @@
     // 出発の仕方: 道板を出したまま・道板の上に車がいる時は、事故になる(ミス1回。トレーラーが走り去る演出は main.js の TRAILER_ANIM)
     var unsafe = null, unsafeAnim = null;
     if (window.TRAILER_ANIM && window.TRAILER_ANIM.unsafeDeparture) unsafeAnim = unsafe = window.TRAILER_ANIM.unsafeDeparture();   // 事故で中止した時も、道板を出したままなら、置き去り・落下の演出にする(減点は二重にしない)
-    if (accident) unsafe = null;
+    if (accident || !departed) { if (!accident) unsafeAnim = null; unsafe = null; }
     if (unsafe) { stats.penalty += Math.round(SCORE.perMajor * mult()); stats.majors++; accident = true; reason = unsafe; }   // 重いミス1回として減点
     refreshBar();
     var title = accident ? '事故で作業中止' : (cleared ? 'クリア!' : (mode === 'real' ? 'ミスで終了' : '荷役を終え出発'));
@@ -338,7 +338,7 @@
       if (!mode || ended || mode !== 'time' || turning) return;
       if (!armed) { armed = 1; b.textContent = '本当に出発?(もう一度)'; clearTimeout(t); t = setTimeout(function () { armed = 0; b.textContent = '荷役を終え出発'; }, 3000); return; }
       armed = 0; clearTimeout(t); b.textContent = '荷役を終え出発';
-      finish(false, '荷役を終え出発しました(残り ' + fmtTime(limitSec - elapsed()) + ')');
+      finish(false, '荷役を終え出発しました(残り ' + fmtTime(limitSec - elapsed()) + ')', false, true);
     });
   })();
   $('btnRetry').addEventListener('click', function () { location.reload(); });
