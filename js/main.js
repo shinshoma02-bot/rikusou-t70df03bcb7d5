@@ -183,16 +183,42 @@
     if (Y.sky) { var g = ctx.createLinearGradient(0, 0, 0, 420); g.addColorStop(0, rgb(Y.sky, 0)); g.addColorStop(1, rgb(Y.sky, Y.sky[3])); ctx.fillStyle = g; ctx.fillRect(0, 0, cfg.stage.w, 420); }
     if (yardImgs.ground) ctx.drawImage(yardImgs.ground, 0, 0);
   }
-  function drawYardLight() {   // 全体に掛ける色(トレーラー・車も同じ光の下)と、夜の街灯の明かり
-    var Y = YARD_PICK; if (Y.id === 'day') return;
-    ctx.save();
-    if (Y.desat) { ctx.globalCompositeOperation = 'saturation'; ctx.fillStyle = 'rgba(128,128,128,' + Y.desat + ')'; ctx.fillRect(0, 0, cfg.stage.w, cfg.stage.h); }
-    ctx.globalCompositeOperation = 'multiply'; ctx.fillStyle = rgb(Y.mul2 || Y.mul); ctx.fillRect(0, 0, cfg.stage.w, cfg.stage.h);
-    if (Y.lamps) {
-      ctx.globalCompositeOperation = 'lighter';
-      LAMPS.forEach(function (L) { var g = ctx.createRadialGradient(L[0], L[1], 3, L[0], L[1], LAMP_R); g.addColorStop(0, 'rgba(255,225,150,.4)'); g.addColorStop(1, 'rgba(255,225,150,0)'); ctx.fillStyle = g; ctx.fillRect(L[0] - LAMP_R, L[1] - LAMP_R, LAMP_R * 2, LAMP_R * 2); });
-    }
-    ctx.restore();
+  // 夜の色(全体に掛ける色と、彩度を下げる)と、街灯の明かりは、画面の canvas の上に重ねる CSS の層で描く(2026-11-02 軽くする。全面の合成を canvas でやると、毎フレーム重くなるため)。
+  // 層は、夜の場所だけ使う。canvas と同じ位置・大きさにそろえる(layout の後に YARD_SYNC)
+  var tintEl = null, lampCv = null;
+  function ensureYardOverlays() {
+    if (tintEl) return;
+    var wrap = document.getElementById('stageWrap');
+    if (!wrap) return;
+    tintEl = document.createElement('div');
+    tintEl.style.cssText = 'position:absolute;pointer-events:none;display:none;mix-blend-mode:multiply';
+    lampCv = document.createElement('canvas');
+    lampCv.style.cssText = 'position:absolute;pointer-events:none;display:none;mix-blend-mode:screen';
+    wrap.appendChild(tintEl); wrap.appendChild(lampCv);
+    window.YARD_SYNC = syncYardOverlays;
+    syncYardOverlays();   // 作った時点の画面の大きさに合わせる(あとは layout の後に YARD_SYNC)
+  }
+  function syncYardOverlays() {
+    ensureYardOverlays(); if (!tintEl) return;
+    var wrap = document.getElementById('stageWrap'), wr = wrap.getBoundingClientRect(), cr = canvas.getBoundingClientRect();
+    var l = (cr.left - wr.left) + 'px', t = (cr.top - wr.top) + 'px', w = cr.width + 'px', h = cr.height + 'px';
+    [tintEl, lampCv].forEach(function (e) { e.style.left = l; e.style.top = t; e.style.width = w; e.style.height = h; });
+  }
+  function drawYardLight() {
+    var Y = YARD_PICK;
+    ensureYardOverlays(); if (!tintEl) return;
+    if (Y.id === 'day') { tintEl.style.display = 'none'; lampCv.style.display = 'none'; return; }
+    tintEl.style.display = 'block';
+    tintEl.style.background = rgb(Y.mul2 || Y.mul);
+    var bf = Y.desat ? 'saturate(' + (1 - Y.desat) + ')' : 'none';
+    tintEl.style.backdropFilter = bf; tintEl.style.webkitBackdropFilter = bf;
+    if (!Y.lamps) { lampCv.style.display = 'none'; return; }
+    lampCv.style.display = 'block';
+    if (lampCv.width !== canvas.width || lampCv.height !== canvas.height) { lampCv.width = canvas.width; lampCv.height = canvas.height; }
+    var lc = lampCv.getContext('2d'), m = ctx.getTransform();   // 明かりは、画面の canvas と同じ変換(カメラ)で描く
+    lc.setTransform(1, 0, 0, 1, 0, 0); lc.clearRect(0, 0, lampCv.width, lampCv.height);
+    lc.setTransform(m.a, m.b, m.c, m.d, m.e, m.f);
+    LAMPS.forEach(function (L) { var g = lc.createRadialGradient(L[0], L[1], 3, L[0], L[1], LAMP_R); g.addColorStop(0, 'rgba(255,225,150,.4)'); g.addColorStop(1, 'rgba(255,225,150,0)'); lc.fillStyle = g; lc.fillRect(L[0] - LAMP_R, L[1] - LAMP_R, LAMP_R * 2, LAMP_R * 2); });
   }
   function drawBackdrop() {   // 背景(ベタ塗り or ヤード)を描いて、そのあとに描く奥の枠の画像を返す
     ctx.fillStyle = '#5a616c';
@@ -269,7 +295,6 @@
       var ov = close() ? 90 : 0;   // スマホでは、下のスイッチを画面の真ん中に置けるように、ステージの下端より少し先(背景色)まで動かせる
       t.cy = vh >= SH ? SH / 2 : Math.max(vh / 2 - ov, Math.min(SH - vh / 2 + ov, t.cy));
     }
-    var DPR_MAX = 1.5;   // 画面の描画の解像度の上限(端末の画素比がこれより大きくても、この倍率で描く)
   function layout() {
       var w = wrap.clientWidth || window.innerWidth;
       if (!(w > 0)) return;   // 非表示で幅が0の間は、何もしない(表示された時の resize でもう一度ここへ来る)
@@ -277,9 +302,10 @@
       portrait = window.innerWidth < 700 && window.innerHeight > window.innerWidth;
       compactLand = !portrait && window.innerWidth > window.innerHeight && window.innerHeight <= 520;   // スマホ横: ステージは左の列いっぱい(高さは入れ物 #stageWrap に合わせる)
       var h = compactLand ? Math.round(wrap.clientHeight || w * 0.6) : Math.round(w * (portrait ? 0.62 : SH / SW));
-      var dpr = Math.min(DPR_MAX, window.devicePixelRatio || 1);   // 描く画素の数を減らして軽くする(2026-11-02。2 → 1.5 で、計測の描画の負荷が約2割減。画面の細かさは少し落ちる)
+      var dpr = Math.min(window.GFX ? window.GFX.get().dpr : 1.5, window.devicePixelRatio || 1);   // 描く画素の数の上限は『画面』の設定(軽量 1 / 標準 1.5 / 描画優先 2。2026-11-02)
       var cw = Math.round(w * dpr), ch = Math.round(h * dpr);
       canvas.style.height = h + 'px';
+      if (window.YARD_SYNC) window.YARD_SYNC();   // 夜の色・明かりの重ね(canvas と同じ位置・大きさにそろえる)
       if (canvas.width !== cw || canvas.height !== ch) { canvas.width = cw; canvas.height = ch; }
       if (mini) {
         var mw = Math.round(w * (portrait ? 0.46 : compactLand ? 0.3 : 0.2)), mh = Math.round(mw * SH / SW);
@@ -452,18 +478,45 @@
     return {
       begin: begin, update: update, drawMini: drawMini, layout: layout, focusRect: focusRect, focusPoint: focusPoint, focusSwitches: focusSwitches, zoomToSwitch: zoomToSwitch, restoreView: restoreView, fitAll: fitAll, autoView: autoView, clientToStage: clientToStage, stageToClient: stageToClient,
       state: function () { return { cx: cam.cx, cy: cam.cy, zoom: cam.zoom, manual: manual }; },
+      camSig: function () { return [cam.cx, cam.cy, cam.zoom].join(','); },
       dragSuppressed: function () { return performance.now() < suppressUntil; },
       isPortrait: function () { return portrait; },
       isCompactLand: function () { return compactLand; }
     };
   })();
 
+  // 描画を省く(2026-11-02 軽くする): 画面に動きが無い間は描かない。変化を、カメラ・機構の位置・車の位置などの『見た目の署名』で見る。
+  // 署名が変わったら描く。動いている効果(衝突・揺れ・粒・道板の演出など)がある時は、毎フレーム描く。念のため IDLE_MS ごとに描き直す(取りこぼしの保険)
+  var IDLE_MS = 100, lastSig = null, lastDraw = 0;
+  function sceneSig() {
+    var gs = window.GAME_STATE, fm = window.FLOOR_MECH;
+    if (AN.kind || AN.rampFall || (gs && gs.accident)) return null;
+    if (gs && gs.fx && Object.keys(gs.fx).some(function (k) { var v = gs.fx[k]; return v && (!Array.isArray(v) || v.length); })) return null;
+    if (fm && fm.stopperVisible && fm.stopperVisible()) return null;   // 赤い玉の点滅は、時間で動く
+    var parts = [VIEW.camSig(), canvas.width, canvas.height, AN.off, tireOutT, airSusCur, curTilt];
+    if (fm) {
+      parts.push(fm.curOffs ? JSON.stringify(fm.curOffs()) : '', fm.MECH ? JSON.stringify(fm.MECH) : '');
+      if (fm.rampT) parts.push(fm.rampT()); if (fm.slideT) parts.push(fm.slideT()); if (fm.flapT) parts.push(fm.flapT()); if (fm.bridgeT) parts.push(fm.bridgeT());
+    }
+    if (gs) {
+      var c = gs.car;
+      parts.push(c ? [c.x, c.y, c.progress, c.spinDeg, c.phase, c.velocity, c.seated].join(',') : '', Object.keys(gs.occupied || {}).join(), JSON.stringify(gs.chocks || {}), gs.sel, gs.targetSlot);
+    }
+    return parts.join('|');
+  }
   function loop(now) {
-    VIEW.update(now || performance.now());
-    draw();
-    VIEW.drawMini(now || performance.now());
+    now = now || performance.now();
+    VIEW.update(now);
+    var g = window.GFX ? window.GFX.get() : { fps: 60 };
+    var sig = sceneSig(), changed = sig === null || sig !== lastSig;
+    var due = now - lastDraw >= 1000 / g.fps - 2;   // 軽量(30fps)の時は、描く回数を減らす
+    if (due && (changed || now - lastDraw >= IDLE_MS)) {
+      draw(); lastSig = sig; lastDraw = now;
+    }
+    VIEW.drawMini(now);
     requestAnimationFrame(loop);
   }
+  window.addEventListener('gfxchange', function () { lastSig = null; window.dispatchEvent(new Event('resize')); });
 
   // ---- 出発・入場の演出(2026-10-09 ユーザー指示)----
   // 入場: 画面を開いた時、トレーラーが右から左へ入ってくる。出発: 終わり方(自分で出発・時間切れ・事故など)に関わらず、トレーラーが走り去る。
