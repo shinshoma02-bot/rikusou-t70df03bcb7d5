@@ -498,7 +498,7 @@
     if (!car.scraping) {
       car.scraping = true;
       setStatus('台車のタイヤを格納したまま通っているので、タイヤの側面を擦っています(幅がぎりぎりで、実際は禁止の操作)。');
-      if (!state.freeMode && !state.hints && !car.scrapeMiss) { car.scrapeMiss = true; recordMiss('台車のタイヤに車の横が擦れた', 'minor'); }
+      if (!state.freeMode && !state.hints && !car.scrapeMiss) { car.scrapeMiss = true; recordMiss('台車のタイヤに車の横が擦れた'); }
     }
     if (window.SFX) window.SFX.scrape();
     car.damage = (car.damage || 0) + 0.03 * Math.abs(car.velocity) / 500 * dt;   // 1台が通り過ぎて約0.03(大破にはならない)
@@ -1701,7 +1701,7 @@
       else if (state.hints) { if (!blocked) blocked = p; }
       else if (pressedDir > 0 && !car.missedKeys[p.key]) {
         car.missedKeys[p.key] = true;
-        recordMiss(p.msg.split('。')[0], (p.key === 'ramp' || p.key === 'jack') ? 'minor' : 'major');
+        recordMiss(p.msg.split('。')[0]);   // 2026-11-03: 道板・ジャッキ・細かい接触なども、すべて重いミス(セットピン違反は軽いミスへ)
         if (p.phys && !(PHYS_MOTION && p.key === 'bridge')) hitOrFall(car, p.key, Math.abs(car.velocity));
       }
       // ノーマル・ハードも、実物に当たる理由(phys)では、その位置で止まる(ミスは上で1回記録)
@@ -1908,7 +1908,7 @@
       var f = fm.FLOORS[id];
       if (fx < f.x1 - 10 && !car.pinMissed[id] && !fm.floorPinsOk(id)) {
         car.pinMissed[id] = true;
-        recordMiss('セットピンを刺さずに' + FLOOR_NAME[id] + 'フロアの下へ入った', 'major');
+        recordMiss('セットピンを刺さずに' + FLOOR_NAME[id] + 'フロアの下へ入った', 'minor');   // 2026-11-03: セットピン関連は軽いミス
         setStatus('セットピンを刺さずに' + FLOOR_NAME[id] + 'フロアの下へ入りました!ピンを刺して、フロアをピンに載せてから入ってください。(ミス: ' + state.misses + ')');
       }
     });
@@ -1932,7 +1932,7 @@
     var prior = state.occupied[num];
     if (prior && prior.live !== car) {
       // すでに車がいるスロットには積めない(ノーマル・ハードで車をすり抜けた場合など)
-      if (!car.dupMissed) { car.dupMissed = true; recordMiss(num + '番にはすでに車がある', 'minor'); }
+      if (!car.dupMissed) { car.dupMissed = true; recordMiss(num + '番にはすでに車がある'); }
       return;
     }
     if (!carFitsSlot(num, car.entry)) {
@@ -1940,7 +1940,7 @@
         if (car.fitMsg !== num) { car.fitMsg = num; setStatus(slot.restrictedNote || (num + '番はこの車を積めません。')); }
         return;
       }
-      if (!car.fitMissed) { car.fitMissed = true; recordMiss(num + '番には積めない車種', 'minor'); }
+      if (!car.fitMissed) { car.fitMissed = true; recordMiss(num + '番には積めない車種'); }
     }
     var stopNow = activeStop(num), rotDeg = slot.rot || 0, dip = 0;
     if (stopNow && stopNow.kind === 'hole') {
