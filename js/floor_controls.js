@@ -403,10 +403,14 @@
     });
   }
 
-  function tick() {
-    if (current) { renderPinButtons(); updateTirePanel(); renderStopPin(); }
-    renderMechButtons();
-    if (!lastMsg) refreshStatusLine();
+  var tickLast = 0;
+  function tick(now) {   // 文字やボタンの表示は、毎コマでなく 100ms ごと(軽くするため。2026-11-02)
+    if (now - tickLast >= 100) {
+      tickLast = now;
+      if (current) { renderPinButtons(); updateTirePanel(); renderStopPin(); }
+      renderMechButtons();
+      if (!lastMsg) refreshStatusLine();
+    }
     requestAnimationFrame(tick);
   }
   renderMechButtons();

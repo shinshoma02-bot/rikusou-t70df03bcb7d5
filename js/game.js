@@ -2126,7 +2126,7 @@
       setStatus('フロアを動かしました!車が輪止め(タイヤ落とし)に当たってからにしてください。(ミス: ' + state.misses + ')');
     }
     lastShelfKey = key;
-    requestAnimationFrame(syncDynamicPath);
+    setTimeout(function () { requestAnimationFrame(syncDynamicPath); }, 40);   // 毎コマでなく、約25回/秒で見る(軽くするため。2026-11-02)
   }
   requestAnimationFrame(syncDynamicPath);
 

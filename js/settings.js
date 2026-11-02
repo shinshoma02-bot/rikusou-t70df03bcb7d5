@@ -13,17 +13,35 @@
     '#setPanel .set-sub{margin:4px 0 0;font-size:12px;color:#9fb0c2;text-align:center}' +
     '#btnSettings.set-fab{position:fixed;top:max(8px,env(safe-area-inset-top));right:max(8px,env(safe-area-inset-right));z-index:50;min-height:36px;padding:0 12px;font-size:13px;border-radius:8px;border:2px solid #4b6078;background:rgba(22,32,44,.85);color:#dfe8f2;cursor:pointer}' +
     '#modeBar #btnSettings{min-height:32px;padding:0 10px;font-size:13px;border-radius:8px;border:2px solid #4b6078;background:rgba(22,32,44,.85);color:#dfe8f2;cursor:pointer}';
-  // 描画の設定(2026-11-02 ユーザー指示: 『軽量=描画が荒い』『描画優先=処理が重い』)。端末ごとに保存する。main.js が読む(window.GFX.get())
-  var GFX_PRESETS = {
-    low: { dpr: 1, fps: 30, label: '軽量', sub: '描画が荒くなります(ゆっくり・なめらかさは少し落ちます)' },
-    mid: { dpr: 1.5, fps: 60, label: '標準', sub: 'ふつうの設定です' },
-    high: { dpr: 2, fps: 60, label: '描画優先', sub: '処理が重くなることがあります(きれいに描きます)' }
-  };
+  // 描画の設定(2026-11-02 ユーザー指示: 画質を段階で選ぶ・FPS(1秒に描く回数)を任意に決める)。端末ごとに保存する。main.js が読む(window.GFX.get() → {dpr, fps})
+  // 画質: 描く解像度(画素比)。数字が大きいほどきれい・重い。FPS: 上限(10〜60)。下げるほど、動きは粗くなるが軽くなる
+  var GFX_LEVELS = [
+    { dpr: 1, label: '軽め' },
+    { dpr: 1.25, label: 'やや軽め' },
+    { dpr: 1.5, label: '標準' },
+    { dpr: 1.75, label: 'ややキレイ' },
+    { dpr: 2, label: 'キレイ' }
+  ];
+  var GFX_DEFAULT_Q = 2, GFX_DEFAULT_FPS = 60, GFX_FPS_MIN = 10, GFX_FPS_MAX = 60;
+  function gfxStored(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+  function gfxSave(k, v) { try { localStorage.setItem(k, String(v)); } catch (e) { } }
+  function gfxQ() {
+    var q = parseInt(gfxStored('gfxQ'), 10);
+    if (!(q >= 0 && q < GFX_LEVELS.length)) {   // 以前の『軽量・標準・描画優先』の保存を移す
+      var old = gfxStored('gfx'); q = old === 'low' ? 0 : old === 'high' ? 4 : GFX_DEFAULT_Q;
+    }
+    return q;
+  }
+  function gfxFps() {
+    var f = parseInt(gfxStored('gfxFps'), 10);
+    return f >= GFX_FPS_MIN && f <= GFX_FPS_MAX ? f : GFX_DEFAULT_FPS;
+  }
   window.GFX = {
-    presets: GFX_PRESETS,
-    get: function () { var k = 'mid'; try { k = localStorage.getItem('gfx') || 'mid'; } catch (e) { } return GFX_PRESETS[k] ? GFX_PRESETS[k] : GFX_PRESETS.mid; },
-    key: function () { var k = 'mid'; try { k = localStorage.getItem('gfx') || 'mid'; } catch (e) { } return GFX_PRESETS[k] ? k : 'mid'; },
-    set: function (k) { try { localStorage.setItem('gfx', k); } catch (e) { } window.dispatchEvent(new Event('gfxchange')); }
+    levels: GFX_LEVELS, fpsMin: GFX_FPS_MIN, fpsMax: GFX_FPS_MAX,
+    get: function () { return { dpr: GFX_LEVELS[gfxQ()].dpr, fps: gfxFps() }; },
+    q: gfxQ, fps: gfxFps,
+    setQ: function (q) { gfxSave('gfxQ', q); window.dispatchEvent(new Event('gfxchange')); },
+    setFps: function (f) { gfxSave('gfxFps', f); }   // 描く回数の上限は、次の1コマ目から効く(再描画は要らない)
   };
   var panel = null, body = null, btn = null;
 
@@ -50,14 +68,23 @@
   function showGfx() {
     body.innerHTML = '';
     var h = document.createElement('h2'); h.textContent = '画面(描画)'; body.appendChild(h);
-    var cur = window.GFX.key();
-    Object.keys(GFX_PRESETS).forEach(function (k) {
-      var pr = GFX_PRESETS[k];
-      var b = document.createElement('button'); b.type = 'button'; b.className = 'set-btn' + (cur === k ? ' on' : ''); b.textContent = pr.label;
-      b.addEventListener('click', function () { window.GFX.set(k); showGfx(); });
-      body.appendChild(b);
-      var p = document.createElement('p'); p.className = 'set-sub'; p.textContent = pr.sub; body.appendChild(p);
+    var lab = document.createElement('p'); lab.className = 'set-sub'; lab.textContent = 'きれいさ(重さ・荒さのバランス)'; body.appendChild(lab);
+    var cur = window.GFX.q();
+    var row = document.createElement('div'); row.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px';
+    GFX_LEVELS.forEach(function (lv, k) {
+      var b = document.createElement('button'); b.type = 'button'; b.className = 'set-btn' + (cur === k ? ' on' : ''); b.textContent = lv.label;
+      b.style.marginTop = '0';
+      b.addEventListener('click', function () { window.GFX.setQ(k); showGfx(); });
+      row.appendChild(b);
     });
+    body.appendChild(row);
+    var fl = document.createElement('p'); fl.className = 'set-sub'; fl.style.marginTop = '16px'; body.appendChild(fl);
+    var out = document.createElement('span');
+    var rng = document.createElement('input'); rng.type = 'range'; rng.min = GFX_FPS_MIN; rng.max = GFX_FPS_MAX; rng.step = 5; rng.value = window.GFX.fps(); rng.style.cssText = 'width:100%;margin-top:6px';
+    function showFps() { out.textContent = rng.value + ' fps'; fl.textContent = 'なめらかさ(1秒に描く回数の上限): '; fl.appendChild(out); }
+    rng.addEventListener('input', function () { window.GFX.setFps(+rng.value); showFps(); });
+    showFps(); body.appendChild(rng);
+    var note = document.createElement('p'); note.className = 'set-sub'; note.textContent = '少なくすると、動きがパラパラになりますが、スマホが楽になります。'; body.appendChild(note);
     var back = document.createElement('button'); back.type = 'button'; back.className = 'set-btn'; back.textContent = '戻る'; back.addEventListener('click', showMenu); body.appendChild(back);
   }
   function showLang() {

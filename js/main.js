@@ -391,7 +391,7 @@
       return { x: r.left + (x - (cam.cx - vw / 2)) / vw * r.width, y: r.top + (y - (cam.cy - vh / 2)) / vh * r.height };
     }
     function drawMini(now) {
-      if (!mctx || now - miniT < 90) return;
+      if (!mctx || now - miniT < 240) return;   // 地図は、ゆっくり更新で足りる(軽くするため。2026-11-02: 90ms → 240ms)
       miniT = now;
       var show = cam.zoom > 1.06;
       mini.style.display = show ? 'block' : 'none';
