@@ -269,14 +269,15 @@
       var ov = close() ? 90 : 0;   // スマホでは、下のスイッチを画面の真ん中に置けるように、ステージの下端より少し先(背景色)まで動かせる
       t.cy = vh >= SH ? SH / 2 : Math.max(vh / 2 - ov, Math.min(SH - vh / 2 + ov, t.cy));
     }
-    function layout() {
+    var DPR_MAX = 1.5;   // 画面の描画の解像度の上限(端末の画素比がこれより大きくても、この倍率で描く)
+  function layout() {
       var w = wrap.clientWidth || window.innerWidth;
       if (!(w > 0)) return;   // 非表示で幅が0の間は、何もしない(表示された時の resize でもう一度ここへ来る)
       var wasClose = close(), wasCompact = compactLand;
       portrait = window.innerWidth < 700 && window.innerHeight > window.innerWidth;
       compactLand = !portrait && window.innerWidth > window.innerHeight && window.innerHeight <= 520;   // スマホ横: ステージは左の列いっぱい(高さは入れ物 #stageWrap に合わせる)
       var h = compactLand ? Math.round(wrap.clientHeight || w * 0.6) : Math.round(w * (portrait ? 0.62 : SH / SW));
-      var dpr = Math.min(2, window.devicePixelRatio || 1);
+      var dpr = Math.min(DPR_MAX, window.devicePixelRatio || 1);   // 描く画素の数を減らして軽くする(2026-11-02。2 → 1.5 で、計測の描画の負荷が約2割減。画面の細かさは少し落ちる)
       var cw = Math.round(w * dpr), ch = Math.round(h * dpr);
       canvas.style.height = h + 'px';
       if (canvas.width !== cw || canvas.height !== ch) { canvas.width = cw; canvas.height = ch; }
