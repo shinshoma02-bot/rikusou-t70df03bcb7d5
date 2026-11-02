@@ -43,6 +43,20 @@
     setQ: function (q) { gfxSave('gfxQ', q); window.dispatchEvent(new Event('gfxchange')); },
     setFps: function (f) { gfxSave('gfxFps', f); }   // 描く回数の上限は、次の1コマ目から効く(再描画は要らない)
   };
+  // 操作画面の形(2026-11-03 試作。スマホ縦だけ効く。js/ops_tabs.js と index.html の CSS)。端末ごとに保存する
+  var OPS_STYLES = [
+    { key: 'classic', label: '操作方法1', sub: '元の画面です。操作を縦に並べて、スクロールして使います(今までどおり)' },
+    { key: 'tabs', label: '操作方法2', sub: '下に『スイッチ・輪止め・車』のタブを固定。選んだ操作が、タブの上に出ます' },
+    { key: 'drawer', label: '操作方法3', sub: '下にボタンの列だけ出します。押すと操作が開き、もう一度押すと閉じて、絵を広く見られます' }
+  ];
+  function opsKey() { var k = 'classic'; try { k = localStorage.getItem('opsStyle') || 'classic'; } catch (e) { } return OPS_STYLES.some(function (o) { return o.key === k; }) ? k : 'classic'; }
+  function opsApply() { document.documentElement.setAttribute('data-ops', opsKey()); }
+  window.OPS_STYLE = {
+    styles: OPS_STYLES,
+    get: opsKey,
+    set: function (k) { try { localStorage.setItem('opsStyle', k); } catch (e) { } opsApply(); window.dispatchEvent(new Event('opschange')); }
+  };
+  opsApply();
   var panel = null, body = null, btn = null;
 
   function langBtn(code, label) {
@@ -57,6 +71,9 @@
     var snd = document.createElement('button'); snd.type = 'button'; snd.className = 'set-btn'; snd.textContent = '音';
     snd.addEventListener('click', function () { close(); if (window.SFX_UI) window.SFX_UI.open(); });
     body.appendChild(snd);
+    var op = document.createElement('button'); op.type = 'button'; op.className = 'set-btn'; op.textContent = '操作画面(スマホ縦の操作の見た目)';
+    op.addEventListener('click', showOps);
+    body.appendChild(op);
     var gf = document.createElement('button'); gf.type = 'button'; gf.className = 'set-btn'; gf.textContent = '画面(描画の速さ・きれいさ)';
     gf.addEventListener('click', showGfx);
     body.appendChild(gf);
@@ -64,6 +81,19 @@
     lg.addEventListener('click', showLang);
     body.appendChild(lg);
     body.appendChild(closeBtn());
+  }
+  function showOps() {
+    body.innerHTML = '';
+    var h = document.createElement('h2'); h.textContent = '操作画面'; body.appendChild(h);
+    var cur = window.OPS_STYLE.get();
+    window.OPS_STYLE.styles.forEach(function (o) {
+      var b = document.createElement('button'); b.type = 'button'; b.className = 'set-btn' + (cur === o.key ? ' on' : ''); b.textContent = o.label;
+      b.addEventListener('click', function () { window.OPS_STYLE.set(o.key); showOps(); });
+      body.appendChild(b);
+      var p = document.createElement('p'); p.className = 'set-sub'; p.textContent = o.sub; body.appendChild(p);
+    });
+    var note = document.createElement('p'); note.className = 'set-sub'; note.style.marginTop = '12px'; note.textContent = 'スマホを縦にして遊ぶ時の見た目です。パソコンや横画面は変わりません。'; body.appendChild(note);
+    var back = document.createElement('button'); back.type = 'button'; back.className = 'set-btn'; back.textContent = '戻る'; back.addEventListener('click', showMenu); body.appendChild(back);
   }
   function showGfx() {
     body.innerHTML = '';

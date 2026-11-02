@@ -1296,6 +1296,7 @@
     state.targetSlot = state.targetSlot === num ? null : num;
     updateChockUi();
     if (state.targetSlot) setStatus(num + '番の輪止め・落とし蓋を操作できます。');
+    if (state.targetSlot && window.OPS_TAB) window.OPS_TAB('chock');   // 輪止めを選んだら、輪止めのタブへ(試作)
   }
   state.selectSlot = selectSlot;
   state.routeProblems = routeProblems;   // (確認用)今の車が通れない理由の一覧

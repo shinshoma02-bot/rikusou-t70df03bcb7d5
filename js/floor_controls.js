@@ -355,6 +355,7 @@
   }
 
   function open(id) {
+    if (window.OPS_TAB) window.OPS_TAB('floor');   // スイッチを開いたら、スイッチのタブへ(試作)
     var g = GROUPS[id];
     if (!g) return;
     current = id;

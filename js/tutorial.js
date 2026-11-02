@@ -617,6 +617,7 @@
   // 強調した部品が、固定部分(ステージとパネル)に隠れている・画面の外なら、見える所までスクロールする
   function reveal(force) {
     var t = hlEls[0]; if (!t || !t.getBoundingClientRect) return;
+    if (window.OPS_TAB_OF && window.OPS_TAB) { var tab = window.OPS_TAB_OF(t); if (tab) window.OPS_TAB(tab); }   // 強調する部品が、今のタブの外なら、そのタブへ(試作)
     var top = $('stickyTop').getBoundingClientRect().bottom, r = t.getBoundingClientRect(), vh = window.innerHeight;
     if (r.height === 0) return;
     if (window.VIEW && VIEW.isCompactLand && VIEW.isCompactLand()) {   // スマホ横: 操作盤は右の列の中でスクロールするので、その中で見える所へ
