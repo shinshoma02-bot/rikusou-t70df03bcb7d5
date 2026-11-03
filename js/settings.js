@@ -96,7 +96,7 @@
     card.appendChild(t);
     var row = document.createElement('div'); row.style.cssText = 'display:flex;gap:6px;justify-content:center';
     h.imgs.forEach(function (f, i) {
-      var im = document.createElement('img'); im.src = 'assets/common/ui/help/' + f + '?v=219S.2.0.18'; im.alt = o.label + ' の画面 ' + (i + 1);
+      var im = document.createElement('img'); im.src = 'assets/common/ui/help/' + f + '?v=220S.2.0.18'; im.alt = o.label + ' の画面 ' + (i + 1);
       im.style.cssText = 'width:' + (h.imgs.length > 1 ? '48%' : '70%') + ';max-width:150px;border-radius:6px;border:1px solid #556;display:block';
       row.appendChild(im);
     });
