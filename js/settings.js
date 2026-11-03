@@ -6,7 +6,7 @@
   'use strict';
   var STYLE = '#setPanel{position:fixed;inset:0;z-index:9998;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box}' +
     '#setPanel[hidden]{display:none}' +
-    '#setPanel .set-box{width:min(340px,100%);background:#16202c;color:#dfe8f2;border:2px solid #4b6078;border-radius:10px;padding:18px 18px 16px;font-size:15px;box-sizing:border-box}' +
+    '#setPanel .set-box{width:min(360px,100%);max-height:calc(100vh - 32px);overflow-y:auto;-webkit-overflow-scrolling:touch;background:#16202c;color:#dfe8f2;border:2px solid #4b6078;border-radius:10px;padding:18px 18px 16px;font-size:15px;box-sizing:border-box}' +
     '#setPanel h2{margin:0 0 14px;font-size:17px;text-align:center;font-weight:bold}' +
     '#setPanel .set-btn{display:block;width:100%;min-height:46px;margin-top:10px;font-size:16px;border-radius:8px;border:2px solid #4b6078;background:#243446;color:#dfe8f2;cursor:pointer}' +
     '#setPanel .set-btn.on{background:#1f5a48;border-color:#7dfcd0;color:#fff}' +
@@ -82,16 +82,38 @@
     body.appendChild(lg);
     body.appendChild(closeBtn());
   }
+  // 操作画面の説明(2026-11-03): 実際の画面の写真(assets/common/ui/help/)と、どう操作するかを並べる
+  var OPS_HELP = {
+    classic: { imgs: ['ops1.jpg'], how: ['操作を縦に並べて、下へスクロールして使います。', '今まで通りの見た目です(初期設定)。'] },
+    tabs: { imgs: ['ops2.jpg'], how: ['画面の下に、『スイッチ』『輪止め』『車・運転』のタブが出ます。', 'タブを押すと、その操作だけが出ます。', '絵は上に残るので、操作しながら様子が見えます。'] },
+    drawer: { imgs: ['ops3_closed.jpg', 'ops3_open.jpg'], how: ['普段は下のボタンの列だけ出ます。絵を広く見られます。', '操作したい所のボタンを押すと、操作がせり上がって開きます。', 'もう一度同じボタンを押すと、閉じます。'] }
+  };
+  function opsCard(o, cur) {
+    var h = OPS_HELP[o.key];
+    var card = document.createElement('div');
+    card.style.cssText = 'margin-top:12px;padding:8px;border:2px solid ' + (cur === o.key ? '#7dfcd0' : '#4b6078') + ';border-radius:8px;background:#1b2734';
+    var t = document.createElement('div'); t.style.cssText = 'font-weight:bold;font-size:15px;margin-bottom:6px'; t.textContent = o.label + (cur === o.key ? '(使用中)' : '');
+    card.appendChild(t);
+    var row = document.createElement('div'); row.style.cssText = 'display:flex;gap:6px;justify-content:center';
+    h.imgs.forEach(function (f, i) {
+      var im = document.createElement('img'); im.src = 'assets/common/ui/help/' + f + '?v=219S.2.0.18'; im.alt = o.label + ' の画面 ' + (i + 1);
+      im.style.cssText = 'width:' + (h.imgs.length > 1 ? '48%' : '70%') + ';max-width:150px;border-radius:6px;border:1px solid #556;display:block';
+      row.appendChild(im);
+    });
+    card.appendChild(row);
+    var ul = document.createElement('ul'); ul.style.cssText = 'margin:8px 0 0;padding-left:18px;font-size:12.5px;line-height:1.6;color:#dfe8f2';
+    h.how.forEach(function (x) { var li = document.createElement('li'); li.textContent = x; ul.appendChild(li); });
+    card.appendChild(ul);
+    var choose = document.createElement('button'); choose.type = 'button'; choose.className = 'set-btn' + (cur === o.key ? ' on' : ''); choose.textContent = cur === o.key ? 'この操作方法を使っています' : 'この操作方法にする';
+    choose.addEventListener('click', function () { window.OPS_STYLE.set(o.key); showOps(); });
+    card.appendChild(choose);
+    return card;
+  }
   function showOps() {
     body.innerHTML = '';
-    var h = document.createElement('h2'); h.textContent = '操作画面'; body.appendChild(h);
+    var h = document.createElement('h2'); h.textContent = '操作方法'; body.appendChild(h);
     var cur = window.OPS_STYLE.get();
-    window.OPS_STYLE.styles.forEach(function (o) {
-      var b = document.createElement('button'); b.type = 'button'; b.className = 'set-btn' + (cur === o.key ? ' on' : ''); b.textContent = o.label;
-      b.addEventListener('click', function () { window.OPS_STYLE.set(o.key); showOps(); });
-      body.appendChild(b);
-      var p = document.createElement('p'); p.className = 'set-sub'; p.textContent = o.sub; body.appendChild(p);
-    });
+    window.OPS_STYLE.styles.forEach(function (o) { body.appendChild(opsCard(o, cur)); });
     var note = document.createElement('p'); note.className = 'set-sub'; note.style.marginTop = '12px'; note.textContent = 'スマホを縦にして遊ぶ時の見た目です。パソコンや横画面は変わりません。'; body.appendChild(note);
     var back = document.createElement('button'); back.type = 'button'; back.className = 'set-btn'; back.textContent = '戻る'; back.addEventListener('click', showMenu); body.appendChild(back);
   }
