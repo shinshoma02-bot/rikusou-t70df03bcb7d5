@@ -10,7 +10,15 @@
   try { lang = localStorage.getItem(KEY) || ''; } catch (e) { }
   var mh = /[#&]lang=(ja|en)(&|$)/.exec(location.hash || '');
   if (mh) lang = mh[1];
-  if (lang !== 'en' && lang !== 'ja') lang = 'ja';
+  // 初回(保存した言語も #lang= も無い時)だけ、端末の言語で決める(2026-11-06 ユーザー承認・D74。CrazyGames の『既定は英語』の確認のため): いちばん優先の言語が日本語なら日本語、それ以外は英語。
+  // 決めた言語は保存しない(端末の言語を変えれば、次の初回に追随する)。保存済みの言語・#lang= は、今まで通り優先
+  if (lang !== 'en' && lang !== 'ja') {
+    lang = 'ja';
+    try {
+      var nl = (navigator.languages && navigator.languages[0]) || navigator.language || '';
+      if (nl && !/^ja\b/i.test(nl)) lang = 'en';
+    } catch (e) { }
+  }
   var JA = /[぀-ヿ㐀-鿿ｦ-ﾟ]/;
   var missing = {}, listeners = [];
   var origText = typeof WeakMap === 'function' ? new WeakMap() : null, origAttr = typeof WeakMap === 'function' ? new WeakMap() : null;

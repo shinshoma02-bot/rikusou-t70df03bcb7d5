@@ -715,12 +715,15 @@
   function slideReady() { return MECH.slide && slideT() >= 1; }
   // 車の体(x0〜x1、屋根の高さ関数 top、接地の高さ y)が、板(姿勢 offs・出ている割合 t)に当たるか。
   // 板の上面が、車の接地面より16px(約0.14m、1番↔2番がつながる許容14px+余裕)以上高い所にあって、板の下面が屋根より下に入れば当たり
-  function slideHitsBody(x0, x1, top, y, offs, t) {
+  //  slope / xr(省略可): 車が載っているフロアの傾き(画面での dy/dx)と、その基準の x。1番フロアの車は、1番フロアごと傾くので、
+  //  接地の高さ・屋根の高さを、傾きに沿って x ごとにずらして比べる(傾けないと、1番の後ろを上げた時に、板が『車の後ろより高い』と誤判定して『ぶつかった』になった。2026-11-04 ユーザー報告)
+  function slideHitsBody(x0, x1, top, y, offs, t, slope, xr) {
     var g = slideGeom(offs, t), th = SLIDE.thick, w = g.b[0] - g.a[0];
     if (w < 2) return false;
+    var sl = slope || 0;
     for (var x = Math.max(g.a[0], x0); x <= Math.min(g.b[0], x1); x += 4) {
-      var ty = g.a[1] + (g.b[1] - g.a[1]) * (x - g.a[0]) / w;
-      if (ty < y - 16 && ty + th > top(x) + 2) return true;
+      var ty = g.a[1] + (g.b[1] - g.a[1]) * (x - g.a[0]) / w, dy = sl * (x - xr);
+      if (ty < y + dy - 16 && ty + th > top(x) + dy + 2) return true;
     }
     return false;
   }
@@ -746,7 +749,12 @@
   // スライド板(1番の後端から出る板)に、1番・2番に積んである車の体が当たるか(2026-10-23: 1番の車も見る。以前は2番の車だけだった)
   function slideHitsCar2Item(o, offs, t) {
     var pos = o.floor ? onFloor(o.floor, o.localX, o.localY) : [o.localX, o.localY], x0 = pos[0] - o.leftTireX;
-    return slideHitsBody(x0, x0 + o.w, carTopY(o, pos, 0), pos[1], offs, t);
+    var slope = 0;
+    if (o.floor === 'F1') {   // 板は1番フロアの後端から出る。1番の車は1番と一緒に傾くので、傾きを見る(2番の車は、これまで通り)
+      var p2 = onFloor('F1', o.localX + 40, o.localY);
+      if (Math.abs(p2[0] - pos[0]) > 1) slope = (p2[1] - pos[1]) / (p2[0] - pos[0]);
+    }
+    return slideHitsBody(x0, x0 + o.w, carTopY(o, pos, 0), pos[1], offs, t, slope, pos[0]);
   }
   function slideHitsCar2(offs, t) {
     var gsn = window.GAME_STATE; if (!gsn) return false;

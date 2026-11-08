@@ -320,8 +320,10 @@
 
   // 1. 画面の見方
   add({ c: 0, info: true, t: 'トレーラーとフロア番号', x: '上の絵が車を積むトレーラー(キャリアカー)です。車を載せる床を「フロア」と呼び、上の段が1・2・3番、下の段が4・5・6番。下の段の5番と6番の間に「宙段フロア(7番)」が存在します。7台積む際に使用します。', hl: function () { return el('stageWrap'); } });
-  add({ c: 0, info: true, t: '操作盤', x: '画面の真ん中あたりが操作盤です。「道板を出す」などの大きなボタン(道板=車が乗る坂)と、車を載せる各フロアと紐づいてるスロット番号1〜6(輪止めと落とし蓋の操作)があります。フロアを上げ下げするスイッチは、トレーラー上の光る枠をタップするとここに出ます。扇動板・スライド板・5番のピンのボタン(「上段フロア」「下段フロア」の欄)は前側のスイッチ(1番・2番)を開くと、その操作盤の中に出ます。', hl: function () { return el('floorPanel').concat(el('chockPanel')); } });
-  add({ c: 0, info: true, t: '車カード', x: function () { return '一番下が車の一覧(車カード)です。このチュートリアルは7台。車をタップすると道板の手前に入場し、右下の {LEFT} {RIGHT} ボタンで前後に動かします。カードの「幅」は6番に載せられるかの目安(6番は1.755m以下)。積む順番は、黄色い枠で教えます。' + (fixedDeck() ? '今回の7台は毎回同じです。各カードの「○番用」の番号に積みます。向き(前向き・バック)も決まっていて、呼ぶところで案内します。理由は、その番号の車を呼ぶところで説明します。' : ''); }, hl: function () { return el('controls'); }, enter: function () { var h = $('deckDrawerHandle'); var d = $('deckDrawer'); if (h && d && !d.classList.contains('open')) h.click(); } });
+  add({ c: 0, info: true, t: '操作盤', x: '画面の真ん中あたりが操作盤です。「道板を出す」などの大きなボタン(道板=車が乗る坂)と、車を載せる各フロアと紐づいてるスロット番号1〜6(輪止めと落とし蓋の操作)があります。', hl: function () { return el('floorPanel').concat(el('chockPanel')); } });
+  add({ c: 0, info: true, t: 'スイッチの出し方', x: 'フロアを上げ下げするスイッチは、トレーラー上の光る枠をタップすると操作盤に出ます。扇動板・スライド板・5番のピンのボタン(「上段フロア」「下段フロア」の欄)は、前側のスイッチ(1番・2番)を開くと、その操作盤の中に出ます。', hl: function () { return el('floorPanel'); } });
+  add({ c: 0, info: true, t: '車カード', x: function () { return '一番下が車の一覧(車カード)です。このチュートリアルは7台。車をタップすると道板の手前に入場し、右下の {LEFT} {RIGHT} ボタンで前後に動かします。'; }, hl: function () { return el('controls'); }, enter: function () { var h = $('deckDrawerHandle'); var d = $('deckDrawer'); if (h && d && !d.classList.contains('open')) h.click(); } });
+  add({ c: 0, info: true, t: '車カードの見方', x: function () { return 'カードの「幅」は6番に載せられるかの目安(6番は1.755m以下)。積む順番は、黄色い枠で教えます。' + (fixedDeck() ? '今回の7台は毎回同じです。各カードの「○番用」の番号に積みます。向き(前向き・バック)も決まっていて、呼ぶところで案内します。理由は、その番号の車を呼ぶところで説明します。' : ''); }, hl: function () { return el('controls'); } });
 
   // 2. 道板
   add({ c: 1, t: '道板を出す', x: '車はトレーラー後ろの「道板」(坂)から乗ります。まず「道板を出す」を押してください。', hint: '操作盤の一番上の「道板を出す」です。画面の下の方にあります。', hl: function () { return MECH.ramp ? [] : el('btnRamp'); }, done: function () { return fm.rampReady(); }, fix: Auto.ramp });
@@ -337,7 +339,7 @@
       return fm.tireOffGround() ? 'ジャッキの {DOWN} を押し続ける(タイヤが地面につくまで。全部縮めなくてかまいません)' : '出来ました(タイヤが地面についています)。';
     };
   }
-  add({ c: 2, info: true, t: 'なぜ台車の車軸を伸ばすのか', x: '軽四は、台車のタイヤを外へ出さなくても通れます。', hl: function () { return el('stageWrap'); } });
+  add({ c: 2, info: true, t: 'なぜ台車の車軸を伸ばすのか', x: '走行時に格納されているタイヤの幅の分、車の通るスペースが制限されています。そのため作業中はタイヤを外に出します。ちなみに軽四は台車のタイヤを外へ出さなくても通れます。', hl: function () { return el('stageWrap'); } });
   add({ c: 2, t: 'ジャッキ・タイヤ操作盤を開く', x: '後ろの車軸辺りの光る枠をタップして、タイヤの操作盤を出してください。', hint: '光る枠は2つあり、どちらをタップしても同じ操作盤が出ます。', ring: 'tire', past: tireDone, done: function () { return window.SWITCH_UI.current === 'tire'; }, fix: function () { openPanel('tire'); } });
   add({ c: 2, t: 'ジャッキでタイヤを浮かせる', x: 'タイヤが地面に付いたままだと車軸は動きません。「ジャッキ」の {UP} を押し続けて、タイヤを地面から浮かせてください。', sub: tireSub('jack'), hint: '{UP}は押している間だけ動きます。タイヤが浮いたら離してください。', enter: function () { openPanel('tire'); }, hl: function () { return fm.tireOffGround() || MECH.tireOut ? [] : swBtn(0, 'up'); }, past: tireDone, done: function () { return fm.tireOffGround() || MECH.tireOut; }, fix: Auto.jackUp });
   add({ c: 2, t: '車軸のロックを解除する', x: '車軸のロックを外します。「右引」と「左引」を押して、両方のロックを解除してください。', sub: tireSub('unlock'), hint: '「引」がロック解除、「押」がロックです。タイヤが浮いていないと動きません。', enter: function () { openPanel('tire'); }, hl: function () { var r = []; if (MECH.lockR) r = r.concat(swBtn(1, 'migi_hiki')); if (MECH.lockL) r = r.concat(swBtn(1, 'hidari_hiki')); return r; }, past: tireDone, done: function () { return (!MECH.lockR && !MECH.lockL) || MECH.tireOut; }, fix: Auto.unlock });
@@ -488,7 +490,8 @@
   add({ c: 11, info: true, t: 'サイクル完了の条件', x: 'サイクルが完了する条件は、①7台とも積んで、全部長押しで固定して緊締 ②上段のフロアが全てセットピンに載っている ③5番フロアが平ら ④宙段フロアが固定ピンに載っている ⑤タイヤ・ロックが走行状態(タイヤを格納してロック) ⑥4番扇動板をしまう ⑦道板をしまう、です。このうち⑤のタイヤの格納が、まだ残っています。', hl: function () { return []; } });
   add({ c: 11, t: 'スライド車軸を縮める', x: '伸ばした車軸を縮めて、走行の状態に戻します。伸ばした時の逆の手順です。「いまやること」に出る操作を、順番にやってください。', sub: tireInSub, hint: '「縮」は、右側のボタンの上から2番目です。', ring: 'tire', enter: function () { openPanel('tire'); }, hl: tireInHl, past: function () { return !!ctx.cycleDone; }, done: tireStowed, fix: function () { return Auto.tireSet(false); } });
   add({ c: 11, t: '道板をしまう', x: '最後に「道板をしまう」を押してください。足りない条件は、ここに出ます。', sub: function () { var u = unmet().filter(function (s) { return s.indexOf('道板') < 0; }); return u.length ? '残り: ' + u.join(' / ') : 'あと少し。「道板をしまう」を押す'; }, hint: 'まだ足りない条件が上に出ています。1つずつ直してください。', hl: function () { return MECH.ramp ? el('btnRamp') : []; }, done: function () { return !!ctx.cycleDone; }, fix: async function () { await Auto.stow(); } });
-  add({ c: 11, info: true, t: 'イージー・ノーマル・ハードの違い', x: '難易度が上がるほど、ガイドが減って、ミスの扱いが厳しくなります。イージー: 通れない・積めない状態のとき、警告を出して車を止めます(進めない・OKにならない)。ノーマル・ハード: 止めずにそのまま進めますが、ミスとして記録して減点します(同じ理由は車1台につき1回)。ハードは、画面のヒントや状態表示も出ません。重いミス(-80点)の例: スライド車軸を伸ばさずに軽自動車以外が6番の横を通る、脱輪、駐車中の車にぶつかる、フロアが下がっているのに進む。軽いミス(-30点)の例: 道板が出ていない、すでに車があるスロットで止まる、6番に積めない車種で止まる。このチュートリアルは、イージーと同じ「警告して止める」形です。', hl: function () { return []; } });
+  add({ c: 11, info: true, t: 'イージー・ノーマル・ハードの違い', x: '難易度が上がるほど、ガイドが減って、ミスの扱いが厳しくなります。イージー: 通れない・積めない状態のとき、警告を出して車を止めます(進めない・OKにならない)。ノーマル・ハード: 止めずにそのまま進めますが、ミスとして記録して減点します(同じ理由は車1台につき1回)。ハードは、画面のヒントや状態表示も出ません。このチュートリアルは、イージーと同じ「警告して止める」形です。', hl: function () { return []; } });
+  add({ c: 11, info: true, t: 'ミスの重さ', x: '重いミス(-80点)の例: 道板を出していないのに車を呼ぶ、スライド車軸を伸ばさずに軽自動車以外が6番の横を通る、脱輪、駐車中の車にぶつかる、フロアが下がっているのに進む。軽いミス(-30点)の例: 輪止めに当たっていないのにフロアを動かす、セットピンを刺さずにフロアの下へ車が入る。', hl: function () { return []; } });
   add({ c: 11, info: true, last: true, t: '配車への連絡と得点', x: '配車担当への連絡:時々、組み合わせ的にどうやっても積めない荷物が来ます。そのときは画面上の「配車に連絡」で伝えます(早いほどボーナス。積めるのに連絡すると減点)。得点:1台積むごとに加点、ミスで減点、積んだ高さが高すぎると減点。難易度が上がると倍率が上がります。ここで終わりです。「自由に練習」で、このまま触れます。', hl: function () { return el('btnDispatch'); } });
 
   // ---------- 進行 ----------

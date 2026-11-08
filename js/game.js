@@ -1191,7 +1191,7 @@
     btnLash.style.display = num ? '' : 'none';
     btnLash.disabled = !c || !c.locked;
     if (c && !c.locked) c.lashTurns = 0;   // タップを外したら、ワイヤーも外れる
-    btnLash.textContent = !c ? '荷締機(車を積んでから)' : (!c.locked ? '荷締機(先に車を長押し)' : (c.lashTurns >= LASH_TURNS ? '固縛を外す(固縛完了)' : '荷締機を回す(' + (c.lashTurns || 0) + '/' + LASH_TURNS + ')' + (req ? '' : ' ※任意')));
+    btnLash.textContent = !c ? '荷締機(車を積んでから)' : (!c.locked ? '荷締機(先に車を長押し)' : (c.lashTurns >= LASH_TURNS ? '固縛を外す(固縛完了)' : '荷締機を回す(' + (c.lashTurns || 0) + '/' + LASH_TURNS + ')'));
   }
   setInterval(updateLashUi, 400);
   function updateChockUi() {

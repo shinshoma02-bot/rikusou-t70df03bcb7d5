@@ -57,6 +57,16 @@
     set: function (k) { try { localStorage.setItem('opsStyle', k); } catch (e) { } opsApply(); window.dispatchEvent(new Event('opschange')); }
   };
   opsApply();
+  // ボタンの大きさ・左右の配置(2026-11-04)。端末ごとに保存。html の data-btnsize(small/normal/large)・data-hand(right/left)に反映(index.html の CSS が見る)
+  var BTN_SIZES = [['small', '小'], ['normal', '標準'], ['large', '大']], HANDS = [['right', '右手で操作(矢印は右下)'], ['left', '左手で操作(矢印は左下)']];
+  function btnGet(key, list, def) { var v = def; try { v = localStorage.getItem(key) || def; } catch (e) { } return list.some(function (o) { return o[0] === v; }) ? v : def; }
+  function btnApply() { var r = document.documentElement; r.setAttribute('data-btnsize', btnGet('btnSize', BTN_SIZES, 'normal')); r.setAttribute('data-hand', btnGet('hand', HANDS, 'right')); }
+  window.BTN_PREF = {
+    size: function () { return btnGet('btnSize', BTN_SIZES, 'normal'); }, hand: function () { return btnGet('hand', HANDS, 'right'); },
+    setSize: function (v) { try { localStorage.setItem('btnSize', v); } catch (e) { } btnApply(); },
+    setHand: function (v) { try { localStorage.setItem('hand', v); } catch (e) { } btnApply(); }
+  };
+  btnApply();
   var panel = null, body = null, btn = null;
 
   function langBtn(code, label) {
@@ -72,7 +82,7 @@
     snd.addEventListener('click', function () { close(); if (window.SFX_UI) window.SFX_UI.open(); });
     body.appendChild(snd);
     var op = document.createElement('button'); op.type = 'button'; op.className = 'set-btn'; op.textContent = '操作画面(スマホ縦の操作の見た目)';
-    op.addEventListener('click', showOps);
+    op.addEventListener('click', function () { opsView = null; showOps(); });
     body.appendChild(op);
     var gf = document.createElement('button'); gf.type = 'button'; gf.className = 'set-btn'; gf.textContent = '画面(描画の速さ・きれいさ)';
     gf.addEventListener('click', showGfx);
@@ -88,10 +98,12 @@
     tabs: { imgs: ['ops2.jpg'], how: ['画面の下に、『スイッチ』『輪止め』『車・運転』のタブが出ます。', 'タブを押すと、その操作だけが出ます。', '絵は上に残るので、操作しながら様子が見えます。'] },
     drawer: { imgs: ['ops3_closed.jpg', 'ops3_open.jpg'], how: ['普段は下のボタンの列だけ出ます。絵を広く見られます。', '操作したい所のボタンを押すと、操作がせり上がって開きます。', 'もう一度同じボタンを押すと、閉じます。'] }
   };
-  function opsCard(o, cur) {
+  // 操作方法1〜3は、横に並べた選択肢から選ぶ(2026-11-04)。選んだ(見ている)ものの画像と説明を、その下に1つだけ出す。『使用中』は、実際に使っているもの
+  var opsView = null;
+  function opsDetail(o, cur) {
     var h = OPS_HELP[o.key];
     var card = document.createElement('div');
-    card.style.cssText = 'margin-top:12px;padding:8px;border:2px solid ' + (cur === o.key ? '#7dfcd0' : '#4b6078') + ';border-radius:8px;background:#1b2734';
+    card.style.cssText = 'margin-top:10px;padding:8px;border:2px solid ' + (cur === o.key ? '#7dfcd0' : '#4b6078') + ';border-radius:8px;background:#1b2734';
     var t = document.createElement('div'); t.style.cssText = 'font-weight:bold;font-size:15px;margin-bottom:6px'; t.textContent = o.label + (cur === o.key ? '(使用中)' : '');
     card.appendChild(t);
     var row = document.createElement('div'); row.style.cssText = 'display:flex;gap:6px;justify-content:center';
@@ -113,9 +125,77 @@
     body.innerHTML = '';
     var h = document.createElement('h2'); h.textContent = '操作方法'; body.appendChild(h);
     var cur = window.OPS_STYLE.get();
-    window.OPS_STYLE.styles.forEach(function (o) { body.appendChild(opsCard(o, cur)); });
-    var note = document.createElement('p'); note.className = 'set-sub'; note.style.marginTop = '12px'; note.textContent = 'スマホを縦にして遊ぶ時の見た目です。パソコンや横画面は変わりません。'; body.appendChild(note);
+    var arg = arguments[0]; if (typeof arg === 'string') opsView = arg;
+    if (!opsView || !OPS_HELP[opsView]) opsView = cur;
+    var row = document.createElement('div'); row.style.cssText = 'display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px';
+    window.OPS_STYLE.styles.forEach(function (o) {
+      var b = document.createElement('button'); b.type = 'button';
+      b.className = 'set-btn' + (opsView === o.key ? ' on' : '');
+      b.textContent = (cur === o.key ? '✓ ' : '') + o.label;
+      b.addEventListener('click', function () { showOps(o.key); });
+      row.appendChild(b);
+    });
+    body.appendChild(row);
+    window.OPS_STYLE.styles.forEach(function (o) { if (o.key === opsView) body.appendChild(opsDetail(o, cur)); });
+    body.appendChild(btnSection());
+    var note = document.createElement('p'); note.className = 'set-sub'; note.style.marginTop = '12px'; note.textContent = 'スマホを縦にして遊ぶ時の見た目です。パソコンや横画面は変わりません。(✓ は、いま使っている操作方法)';
+    body.appendChild(note);
     var back = document.createElement('button'); back.type = 'button'; back.className = 'set-btn'; back.textContent = '戻る'; back.addEventListener('click', showMenu); body.appendChild(back);
+  }
+  // 『ボタンの大きさ・左右』の見本(2026-11-04): 今の操作方法・大きさ・左右の設定で、スマホ縦の操作画面がどう見えるかを、小さく描く(実寸の0.6倍)
+  function sampleBox() {
+    var size = window.BTN_PREF.size(), hand = window.BTN_PREF.hand(), ops = window.OPS_STYLE.get(), K = 0.6;
+    var arrow = { small: 56, normal: 76, large: 96 }[size] * K, tabH = { small: 34, normal: 40, large: 54 }[size] * K, tabF = { small: 13, normal: 14, large: 16 }[size] * K;
+    var box = document.createElement('div');
+    box.setAttribute('aria-label', '見本(いまの設定の見た目)');
+    box.style.cssText = 'position:relative;width:234px;height:300px;margin:10px auto 4px;border:2px solid #4b6078;border-radius:12px;overflow:hidden;background:#0d1218;font-size:' + (11 * K) + 'px;color:#cfd8e0';
+    var stage = document.createElement('div');
+    stage.style.cssText = 'position:absolute;left:0;right:0;top:0;height:120px;background:linear-gradient(#2b3a4a,#1c2630);display:flex;align-items:center;justify-content:center;color:#8fa3b5;font-size:12px';
+    stage.textContent = 'ゲーム画面(トレーラー)';
+    box.appendChild(stage);
+    var panel = document.createElement('div');
+    panel.style.cssText = 'position:absolute;left:0;right:0;bottom:0;top:120px;background:#101418';
+    if (ops !== 'classic') {
+      var tabs = document.createElement('div'); tabs.style.cssText = 'display:flex;gap:3px;padding:3px 4px;border-bottom:2px solid #3a4a58;background:#101418';
+      ['スイッチ', '輪止め', '車・運転'].forEach(function (t, k) {
+        var b = document.createElement('div'); b.textContent = t;
+        b.style.cssText = 'flex:1;height:' + tabH + 'px;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:' + tabF + 'px;border-radius:5px;border:1px solid ' + (k === 2 ? '#7dfcd0' : '#4b6078') + ';background:' + (k === 2 ? '#1f5a48' : '#26313b') + ';color:' + (k === 2 ? '#fff' : '#cfd8e0');
+        tabs.appendChild(b);
+      });
+      panel.appendChild(tabs);
+    }
+    var list = document.createElement('div'); list.style.cssText = 'padding:6px;display:grid;grid-template-columns:repeat(4,1fr);gap:3px';
+    for (var n = 0; n < 8; n++) { var c = document.createElement('div'); c.style.cssText = 'height:30px;border-radius:3px;background:#26313b;border:1px solid #3a4a58'; list.appendChild(c); }
+    panel.appendChild(list);
+    box.appendChild(panel);
+    [['btn_drive_fwd.png', 'front'], ['btn_drive_back.png', 'back']].forEach(function (a, k) {
+      var im = document.createElement('img'); im.src = 'assets/common/ui/' + a[0] + '?v=229S.2.0.26'; im.alt = '';
+      var off = 6 + k * (arrow + 6 * K);
+      im.style.cssText = 'position:absolute;bottom:6px;width:' + arrow + 'px;height:' + arrow + 'px;' + (hand === 'left' ? 'left:' : 'right:') + (hand === 'left' ? off : 6 + (1 - k) * (arrow + 6 * K)) + 'px;pointer-events:none';
+      box.appendChild(im);
+    });
+    return box;
+  }
+  function btnSection() {
+    var wrap = document.createElement('div'); wrap.style.cssText = 'margin-top:16px;padding-top:10px;border-top:2px solid #3a4a58';
+    var t = document.createElement('div'); t.style.cssText = 'font-weight:bold;font-size:15px'; t.textContent = 'ボタンの大きさ・左右'; wrap.appendChild(t);
+    function group(title, list, cur, set) {
+      var lab = document.createElement('p'); lab.className = 'set-sub'; lab.textContent = title; wrap.appendChild(lab);
+      var row = document.createElement('div'); row.style.cssText = 'display:grid;grid-template-columns:repeat(' + list.length + ',1fr);gap:6px;margin-top:6px';
+      list.forEach(function (o) {
+        var b = document.createElement('button'); b.type = 'button'; b.className = 'set-btn' + (cur === o[0] ? ' on' : ''); b.textContent = o[1];
+        b.addEventListener('click', function () { set(o[0]); showOps(); }); row.appendChild(b);
+      });
+      wrap.appendChild(row);
+    }
+    group('ボタンの大きさ(車を動かす矢印・下のタブ)', BTN_SIZES, window.BTN_PREF.size(), window.BTN_PREF.setSize);
+    var hl = document.createElement('div'); hl.style.height = '10px'; wrap.appendChild(hl);
+    group('矢印ボタンの場所(車を動かすボタン)', HANDS, window.BTN_PREF.hand(), window.BTN_PREF.setHand);
+    var sl = document.createElement('p'); sl.className = 'set-sub'; sl.style.marginTop = '12px'; sl.textContent = '見本(スマホ縦で、車のタブを開いた時のイメージ)'; wrap.appendChild(sl);
+    wrap.appendChild(sampleBox());
+    var note = document.createElement('p'); note.className = 'set-sub'; note.style.marginTop = '8px'; note.textContent = '変えるとすぐ、見本とゲーム画面に反映されます(この端末だけ)。';
+    wrap.appendChild(note);
+    return wrap;
   }
   function showGfx() {
     body.innerHTML = '';

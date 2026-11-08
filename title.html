@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta name="robots" content="noindex,nofollow">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <script src="js/i18n_en.js?v=178S.2.0.0"></script>
@@ -334,6 +333,7 @@ html[lang="en"] .panel h2 { letter-spacing: .2em; }
     <button class="card" data-mode="real"><span class="ico">⚠</span><span><b>リアルモード</b><small>ミスした時点で終了！</small></span><span class="go">›</span></button>
     <button class="card" data-mode="tutsim"><span class="ico">学</span><span><b>チュートリアル/シミュレーション</b><small>操作を覚える・自由に動かせる！</small></span><span class="go">›</span></button>
     <button class="card" id="guideBtn" type="button"><span class="ico">辞</span><span><b>ガイド</b><small>お知らせ・対応状況・遊び方・用語集・問い合わせ</small></span><span class="go">›</span></button>
+    <button class="card" id="reviewBtn" type="button"><span class="ico">評</span><span><b>レビュー</b><small>みんなの感想を見る・あなたの感想を送る</small></span><span class="go">›</span></button>
   </section>
 
   <section class="panel" id="diffPanel" aria-labelledby="diffTitle" hidden>
@@ -361,9 +361,11 @@ html[lang="en"] .panel h2 { letter-spacing: .2em; }
 <script src="js/voice_guide.js?v=279.1.106"></script>
 <script src="js/settings.js?v=178S.2.0.0"></script>
 <script src="js/feedback_config.js?v=204S.2.0.10"></script>
+<script src="js/reviews_data.js?v=227S.2.0.22"></script>
 <script src="js/news_data.js?v=204S.2.0.10"></script>
 <script src="js/guide.js?v=204S.2.0.10"></script>
-<script>document.getElementById("guideBtn").addEventListener("click", function () { window.GUIDE.open(); });</script>
+<script>document.getElementById("guideBtn").addEventListener("click", function () { window.GUIDE.open(); });
+document.getElementById("reviewBtn").addEventListener("click", function () { window.GUIDE.open("review"); });</script>
 <script>
 (function () {
   // 車輪の位置は assets/ui/rig.json(make_title_assets.py が出力)と同じ値
@@ -479,6 +481,6 @@ html[lang="en"] .panel h2 { letter-spacing: .2em; }
   });
 })();
 </script>
-<div id="buildTag" style="position:fixed;right:8px;bottom:6px;font:11px/1 sans-serif;color:rgba(255,255,255,.55);text-shadow:0 1px 2px rgba(0,0,0,.6);z-index:5;pointer-events:none">ビルド 222S.2.0.18</div>
+<div id="buildTag" style="position:fixed;right:8px;bottom:6px;font:11px/1 sans-serif;color:rgba(255,255,255,.55);text-shadow:0 1px 2px rgba(0,0,0,.6);z-index:5;pointer-events:none">ビルド 238S.6.0.29</div>
 </body>
 </html>

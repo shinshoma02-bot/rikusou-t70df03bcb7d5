@@ -139,8 +139,14 @@
     ]
   };
 
-  var TABS = [['news', 'お知らせ'], ['status', '対応状況'], ['play', '遊び方'], ['score', '得点・減点'], ['terms', '用語集'], ['credits', 'クレジット'], ['contact', '問い合わせ']];
+  var TABS = [['news', 'お知らせ'], ['status', '対応状況'], ['play', '遊び方'], ['score', '得点・減点'], ['terms', '用語集'], ['credits', 'クレジット'], ['review', 'レビュー'], ['contact', '問い合わせ']];
   var css = [
+    '.revSw { display: flex; gap: 6px; margin-bottom: 10px; }',
+    '.revSw button { flex: 1; min-height: 40px; font: inherit; font-weight: bold; color: inherit; background: rgba(255,255,255,.07); border: 1px solid var(--line, rgba(255,255,255,.18)); border-radius: 8px; cursor: pointer; }',
+    '.revSw button.on { background: rgba(125,252,208,.16); border-color: #7dfcd0; }',
+    '.revSum { margin: 4px 0 10px; font-size: 16px; } .revSum b { color: #ffd34d; font-size: 22px; letter-spacing: 2px; }',
+    '.revStars { color: #ffd34d; font-size: 16px; letter-spacing: 1px; } .revItem p { margin: 4px 0 0; white-space: pre-wrap; word-break: break-word; }',
+    '.revPick { display: flex; gap: 4px; margin: 4px 0 12px; } .revPick button { all: unset; cursor: pointer; font-size: 34px; line-height: 1; padding: 4px 6px; color: #8a949a; } .revPick button.on { color: #ffd34d; }',
     '#guideOv { position: fixed; inset: 0; z-index: 50; display: none; align-items: center; justify-content: center; background: rgba(6, 10, 12, .78); padding: max(8px, env(safe-area-inset-top)) 8px max(8px, env(safe-area-inset-bottom)); }',
     '#guideOv.open { display: flex; }',
     '#guideBox { width: min(820px, 100%); max-height: 100%; display: flex; flex-direction: column; background: rgba(14, 22, 24, .97); border: 1px solid var(--line, rgba(255,255,255,.14)); border-radius: 14px; color: var(--ink, #eef3f1); font-family: "Noto Sans JP", system-ui, sans-serif; overflow: hidden; }',
@@ -267,8 +273,10 @@
     var ua = navigator.userAgent, os = /iPhone|iPad|iPod/.test(ua) ? 'iOS' : /Android/.test(ua) ? 'Android' : /Windows/.test(ua) ? 'Windows' : /Mac/.test(ua) ? 'Mac' : /Linux/.test(ua) ? 'Linux' : '不明';
     var br = /Edg\//.test(ua) ? 'Edge' : /Chrome\//.test(ua) ? 'Chrome' : /Safari\//.test(ua) ? 'Safari' : /Firefox\//.test(ua) ? 'Firefox' : '不明';
     var lang = ''; try { lang = localStorage.getItem('lang') || ''; } catch (e) {}
-    return 'ビルド ' + b + ' / ' + os + ' ' + br + ' / 画面 ' + window.innerWidth + '×' + window.innerHeight + ' / 言語 ' + (lang || 'ja');
+    return 'ビルド ' + b + ' / ' + os + ' ' + br + ' / 画面 ' + window.innerWidth + '×' + window.innerHeight + ' / 言語 ' + ((window.I18N && window.I18N.lang) || lang || 'ja');
   }
+  // 版のしるし(画面には出さない。送る内容の表示にも入れない): お試し版=[lite] / 全モード版=[full]。環境情報の欄の後ろに、自動で付く(チェックを外しても付く)。受け取った側が、どの版からの報告かを見分けるため(2026-11-04 ユーザー指示)
+  function edMark() { return ' [' + (window.EDITION === 'lite' ? 'lite' : 'full') + ']'; }
   // 画像(スクリーンショット)の添付: Google フォームは、ログインなしでは画像ファイルを受け取れない(匿名のままにできない)ので、画像を小さく縮めて文字(data URL)にして、『環境情報』の欄の後ろに付ける。
   //  1回の送信に入る大きさの上限が約3万文字なので、縮めた画像は1.8万文字以内の1枚だけ。届いた画像は、スプレッドシートの『data:image/jpeg;base64,…』のセルを、ブラウザのアドレス欄に貼ると見られる
   var IMG_MAX_CHARS = 18000;
@@ -334,7 +342,7 @@
       var data = new FormData();   // multipart: 画像の文字が長くても、URL形式のように膨らまない
       if (cfg.fields.category) data.append(cfg.fields.category, sel.value);
       data.append(cfg.fields.message, text.slice(0, MAXLEN));
-      var info = (ck.checked ? envInfo() : '') + (imgData && cfg.fields.info ? (ck.checked ? '\n' : '') + '[画像] ' + imgData : '');
+      var info = (ck.checked ? envInfo() : '') + edMark() + (imgData && cfg.fields.info ? (ck.checked ? '\n' : '') + '[画像] ' + imgData : '');
       if (info && cfg.fields.info) data.append(cfg.fields.info, info);
       btn.disabled = true; say('送信中…');
       // Google フォームは、ほかのサイトからの送信の返事を読ませない(no-cors)。送れたかどうかは、通信が成功したかで判断する
@@ -342,6 +350,85 @@
         try { localStorage.setItem('guideSentAt', String(Date.now())); } catch (er) {}
         ta.value = ''; clearImg(); cnt.textContent = '0 / ' + MAXLEN; say('送信しました。ありがとうございます!');
         setTimeout(function () { btn.disabled = false; }, WAIT_MS);
+      }).catch(function () { btn.disabled = false; say('送信できませんでした。通信の状態を確認して、もう一度お試しください。', true); });
+    });
+  }
+
+  // ---- レビュー(2026-11-04)----
+  // 『みんなのレビュー』(js/reviews_data.js に載せたもの)を見る・『レビューを書く』(★1〜5+ひとこと。問い合わせと同じ Google フォームへ、『【レビュー★4】本文』の形で匿名で送る)。
+  // フォームの『種類』には、今ある『ご意見・要望』を使う(フォームの選択肢を増やさなくても届く)。名前・メールは聞かない。
+  var REVIEW_MAX = 300, REVIEW_WAIT_MS = 60000;
+  function starText(n) { var s = ''; for (var i = 1; i <= 5; i++) s += i <= n ? '★' : '☆'; return s; }
+  function reviewTab(body) {
+    var mode = 'read';
+    var sw = document.createElement('div'); sw.className = 'revSw';
+    var bRead = el('button', 'みんなのレビュー'), bWrite = el('button', 'レビューを書く');
+    bRead.type = 'button'; bWrite.type = 'button';
+    var area = document.createElement('div');
+    function draw() {
+      bRead.className = mode === 'read' ? 'on' : ''; bWrite.className = mode === 'write' ? 'on' : '';
+      area.innerHTML = '';
+      if (mode === 'read') renderReviews(area); else reviewForm(area);
+    }
+    bRead.addEventListener('click', function () { mode = 'read'; draw(); });
+    bWrite.addEventListener('click', function () { mode = 'write'; draw(); });
+    sw.appendChild(bRead); sw.appendChild(bWrite); body.appendChild(sw); body.appendChild(area); draw();
+  }
+  function renderReviews(box) {
+    var list = (window.REVIEWS_DATA || []).filter(function (r) { return r && r.stars >= 1 && r.stars <= 5; });
+    if (!list.length) { box.appendChild(el('p', 'まだレビューはありません。「レビューを書く」から、最初の1件を送ってみませんか?')); box.appendChild(el('p', '送っていただいたレビューは、内容を確認してから、ここに載せます(個人情報・URL・悪口などは載せません)。', 'guideNote')); return; }
+    var sum = 0; list.forEach(function (r) { sum += r.stars; });
+    var avg = Math.round(sum / list.length * 10) / 10;
+    var head = document.createElement('div'); head.className = 'revSum';
+    head.appendChild(el('b', starText(Math.round(avg)))); head.appendChild(el('span', ' ' + avg.toFixed(1) + ' / 5(' + list.length + '件)'));
+    box.appendChild(head);
+    list.forEach(function (r) {
+      var c = document.createElement('div'); c.className = 'guideItem revItem';
+      c.appendChild(el('div', starText(r.stars) + (r.date ? '  ' + r.date : ''), 'revStars'));
+      if (r.text) c.appendChild(el('p', r.text));
+      box.appendChild(c);
+    });
+    box.appendChild(el('p', 'レビューは、送っていただいた内容を確認して載せたものです。', 'guideNote'));
+  }
+  function reviewForm(box) {
+    var cfg = window.FEEDBACK_CONFIG || {}, ready = !!(cfg.action && cfg.fields && cfg.fields.message);
+    box.appendChild(el('p', 'ゲームを遊んだ感想を、匿名で送れます。名前・メールアドレスは要りません。'));
+    if (!ready) box.appendChild(el('p', 'ただいま準備中です。もう少しお待ちください。', 'guideWarn'));
+    var form = document.createElement('form'); form.id = 'guideForm'; form.setAttribute('novalidate', '');
+    var stars = 0, row = document.createElement('div'); row.className = 'revPick'; row.setAttribute('role', 'radiogroup'); row.setAttribute('aria-label', '評価');
+    var btns = [];
+    function paint() { btns.forEach(function (b, i) { b.textContent = i < stars ? '★' : '☆'; b.className = i < stars ? 'on' : ''; b.setAttribute('aria-checked', i + 1 === stars ? 'true' : 'false'); }); }
+    for (var i = 1; i <= 5; i++) (function (n) {
+      var b = document.createElement('button'); b.type = 'button'; b.setAttribute('role', 'radio'); b.setAttribute('aria-label', '★' + n);
+      b.addEventListener('click', function () { stars = n; paint(); }); btns.push(b); row.appendChild(b);
+    })(i);
+    paint();
+    var l = el('label', 'ひとこと(任意・' + REVIEW_MAX + '文字まで)', 'guideLbl'); var ta = document.createElement('textarea'); ta.maxLength = REVIEW_MAX; ta.rows = 5;
+    ta.placeholder = '例: 実際のキャリアカーの積み込みの感じが出ていて楽しい。'; l.appendChild(ta);
+    var hp = document.createElement('input'); hp.type = 'text'; hp.tabIndex = -1; hp.autocomplete = 'off'; hp.setAttribute('aria-hidden', 'true'); hp.style.cssText = 'position:absolute;left:-9999px;width:1px;height:1px;opacity:0';
+    var btn = el('button', 'レビューを送る'); btn.type = 'submit'; btn.id = 'guideSend'; btn.disabled = !ready;
+    var msg = el('div', '', 'guideMsg'); msg.setAttribute('role', 'status');
+    [el('div', '評価(★をタップ)', 'guideLbl'), row, l, hp, btn, msg].forEach(function (n) { form.appendChild(n); });
+    box.appendChild(form);
+    box.appendChild(el('p', '送っていただいたレビューは、内容を確認してから「みんなのレビュー」に載せます。個人情報(名前・住所・電話番号など)や、URLは書かないでください。返信はできません(匿名のため)。', 'guideNote'));
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      if (!ready) return;
+      function say(t, bad) { msg.textContent = t; msg.className = 'guideMsg' + (bad ? ' bad' : ' ok'); }
+      if (hp.value) { say('送信しました。ありがとうございます。'); return; }
+      if (!stars) { say('★をタップして、評価を選んでください。', true); return; }
+      var last = 0; try { last = +localStorage.getItem('reviewSentAt') || 0; } catch (er) {}
+      if (Date.now() - last < REVIEW_WAIT_MS) { say('続けて送るには、少し待ってください(1分ほど)。', true); return; }
+      var text = ta.value.trim().slice(0, REVIEW_MAX);
+      var data = new FormData();
+      if (cfg.fields.category) data.append(cfg.fields.category, 'ご意見・要望');
+      data.append(cfg.fields.message, '【レビュー★' + stars + '】' + text);
+      if (cfg.fields.info) data.append(cfg.fields.info, envInfo() + edMark());
+      btn.disabled = true; say('送信中…');
+      fetch(cfg.action, { method: 'POST', mode: 'no-cors', body: data, credentials: 'omit', referrerPolicy: 'no-referrer' }).then(function () {
+        try { localStorage.setItem('reviewSentAt', String(Date.now())); } catch (er) {}
+        ta.value = ''; stars = 0; paint(); say('送信しました。ありがとうございます!確認してから、「みんなのレビュー」に載せます。');
+        setTimeout(function () { btn.disabled = false; }, REVIEW_WAIT_MS);
       }).catch(function () { btn.disabled = false; say('送信できませんでした。通信の状態を確認して、もう一度お試しください。', true); });
     });
   }
@@ -358,6 +445,7 @@
       f.addEventListener('input', function () { list.innerHTML = ''; renderTerms(list, f.value); });
       body.appendChild(f); body.appendChild(list); renderTerms(list, '');
     } else if (tab === 'contact') contactForm(body);
+    else if (tab === 'review') reviewTab(body);
     else if (tab === 'news') renderNews(body);
     else if (tab === 'status') renderStatus(body);
     else GUIDE_DATA[tab].forEach(function (s) { section(body, s); });

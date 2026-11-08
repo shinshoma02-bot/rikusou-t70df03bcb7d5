@@ -632,6 +632,7 @@
       drawMechanismBehindFg();
       drawStopperHook(fm0());   // スロープのピンの赤いレバーは、5番の可動フロアに付いているので、フレームの内側(前景フレームの奥)に描く(2026-10-27 ユーザー指示。以前は外側に描いて、梁の上に出ていた)
     }
+    drawChocks('blocks');   // 輪止め本体: フロアの上・前景フレームの奥(2026-11-03 ユーザー指示: トレーラーのフレームの手前に描かない。位置は、最前面の矢印・ラベルで分かる)
     drawBogiePanel();   // 台車のタイヤの上: 反対側のフレームも重なって見えるので、くり抜かず緑で塗りつぶす
     if (chk.fg.checked) ctx.drawImage(images.fg, 0, 0);
     drawPillarScale();
@@ -640,7 +641,6 @@
     lashQueue.forEach(function (q) { if (q[0] !== '7') drawLashing(q[0], q[1], q[2], q[3], q[4]); });
     if (chk.floors.checked) drawJack('leg');
     if (chk.wheel.checked) drawTrailerWheel();
-    drawChocks('blocks'); // 輪止め本体は小さく、下段では前景フレームの梁に隠れるので手前に描く
     drawPins();
     drawStopPin();
     drawSwitches();
@@ -2097,7 +2097,7 @@
   //  - 選択中のスロット: 輪止めを置ける位置の目盛り+今止まる位置(大きな矢印とラベル)
   //  - それ以外: セット中の輪止め/開いている落し蓋だけ小さな矢印
   function drawChockMarkers() {
-    if (window.UI_HIDDEN) return;   // UI非表示の時は、輪止め・固定などの文字を描かない
+    if (window.UI_HIDDEN || AN.kind === 'out') return;   // 出発の演出中は、トレーラー上の矢印・文字を出さない   // UI非表示の時は、輪止め・固定などの文字を描かない
     var st = window.GAME_STATE;
     if (!st || !st.activeStop) return;
     function arrow(label, color, big) {
@@ -2145,7 +2145,7 @@
 
   // 輪止め(タイヤストッパ・落とし)に当たって止まっている車に「OK」を出す。以前の選択中スロットの四角い囲いは廃止
   function drawSlotMarks() {
-    if (window.UI_HIDDEN) return;   // UI非表示の時は、輪止め・固定などの文字を描かない
+    if (window.UI_HIDDEN || AN.kind === 'out') return;   // 出発の演出中は、固縛完了・OKなどの表示を出さない   // UI非表示の時は、輪止め・固定などの文字を描かない
     var st = window.GAME_STATE;
     if (!st) return;
     // 積んだ車の状態の表示(D43 後の仕様。ユーザー指示 2026-10-15): 固縛未完(まだタップしていない・赤)→ ワイヤー引っ掛け(タップした・橙)→ 固縛完了(荷締機のハンドルを回した・緑)

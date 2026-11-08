@@ -235,14 +235,21 @@
   }
   // ---- ファイルのBGM(ElevenLabs Music)。読めない時は、上の合成BGMにする ----
   // [ファイル, 音量]。音量は、曲ごとの大きさ(ffmpeg の平均音量)をそろえた値(2026-10-19)
+  // 場面ごとに、曲の候補を並べる。[[ファイル, 音量], …]。候補が複数ある時は、ページを開いた時に1つを選ぶ(2026-11-03 曲を増やした)
+  // 音量は、曲ごとの大きさ(ffmpeg の平均音量)をそろえた値。増やした曲は、既存の曲と同じ大きさになるよう決めた
   var BGM_FILES = {
-    title: ['assets/bgm/bgm_title_title_depot_v1_el.mp3', 0.5],
-    play: ['assets/bgm/bgm_play_normal_play_night_v1_el.mp3', 0.4],
-    play_easy: ['assets/bgm/bgm_play_easy_easy_road_v1_el.mp3', 0.4],
-    play_hard: ['assets/bgm/bgm_play_hard_deadline_push_v1_el.mp3', 0.33],
-    result: ['assets/bgm/bgm_result_delivered_v1_el.mp3', 0.6],
-    tutorial: ['assets/bgm/bgm_tutorial_first_load_v1_el.mp3', 0.45]
+    title: [['assets/bgm/bgm_title_title_depot_v1_el.mp3', 0.5], ['assets/bgm/bgm_title_title_morning_2_el.mp3', 0.27]],
+    play: [['assets/bgm/bgm_play_normal_play_night_v1_el.mp3', 0.4], ['assets/bgm/bgm_play_play_normal_focus_2_el.mp3', 0.49]],
+    play_easy: [['assets/bgm/bgm_play_easy_easy_road_v1_el.mp3', 0.4], ['assets/bgm/bgm_play_easy_play_easy_relax_2_el.mp3', 0.42]],
+    play_hard: [['assets/bgm/bgm_play_hard_deadline_push_v1_el.mp3', 0.33], ['assets/bgm/bgm_play_hard_play_hard_rush_2_el.mp3', 0.28]],
+    result: [['assets/bgm/bgm_result_delivered_v1_el.mp3', 0.6], ['assets/bgm/bgm_result_result_relief_2_el.mp3', 0.57]],
+    tutorial: [['assets/bgm/bgm_tutorial_first_load_v1_el.mp3', 0.45], ['assets/bgm/bgm_tutorial_tutorial_guide_2_el.mp3', 0.48]]
   };
+  var BGM_PICK = {};   // 場面ごとに選んだ曲(ページを開いてから、その場面で最初に選んだ曲のまま)
+  function bgmFile(scene) {
+    if (!BGM_PICK[scene]) { var l = BGM_FILES[scene]; BGM_PICK[scene] = l[Math.floor(Math.random() * l.length)]; }
+    return BGM_PICK[scene];
+  }
   var bgmBuf = {}, bgmLoad = {}, bgmLayers = [], bgmLoopTimer = null, bgmActive = false, bgmWanted = false;
   var BGM_XF = 2.5;   // ループのつなぎ目を、2.5秒かけて重ねる(終わりと始まりをクロスフェード)
   function bgmLoadFile(scene, ok, ng) {
@@ -251,7 +258,7 @@
     bgmLoad[scene] = [[ok, ng]];
     var fin = function (good) { var q = bgmLoad[scene]; delete bgmLoad[scene]; q.forEach(function (c) { c[good ? 0 : 1](); }); };
     try {
-      fetch(BGM_FILES[scene][0]).then(function (r) { if (!r.ok) throw 0; return r.arrayBuffer(); }).then(function (ab) {
+      fetch(bgmFile(scene)[0]).then(function (r) { if (!r.ok) throw 0; return r.arrayBuffer(); }).then(function (ab) {
         var done = function (buf) { bgmBuf[scene] = buf; fin(true); };
         var pr = AC.decodeAudioData(ab, done, function () { fin(false); }); if (pr && pr.catch) pr.catch(function () { fin(false); });
       }).catch(function () { fin(false); });
@@ -297,7 +304,7 @@
     if (BGM_FILES[sc]) {
       bgmLoadFile(sc, function () {
         if (bgmScene !== sc || !on) return;
-        bgmBus.gain.cancelScheduledValues(AC.currentTime); bgmBus.gain.setTargetAtTime(BGM_FILES[sc][1], AC.currentTime, 0.2);
+        bgmBus.gain.cancelScheduledValues(AC.currentTime); bgmBus.gain.setTargetAtTime(bgmFile(sc)[1], AC.currentTime, 0.2);
         bgmFileStart(sc, true);
       }, synthGo);   // 読めなかったら、合成BGM
     } else synthGo();

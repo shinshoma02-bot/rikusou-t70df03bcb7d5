@@ -147,3 +147,99 @@ Object.assign(window.I18N_EN, {
     [/^(.+)（ミス: (\d+)）$/, function (m, t) { return t(m[1]) + ' (Mistakes: ' + m[2] + ')'; }]
   ].forEach(function (x) { P.push(x); });
 })();
+
+// ---- チュートリアルの動的な文の英訳(T16・2026-11-05)。手順の題・『いまやること』の中身・車を呼ぶ説明(車名・高さが入る文)・荷締機・輪止め・固定ピンなど ----
+(function () {
+  var P = window.I18N_EN_PATTERNS;
+  var CAR = { 'スポーツタイプ': 'sports car', 'スポーツクーペ': 'sports coupe', 'スポーツ': 'sports car', 'ミニバン': 'minivan', 'セダン': 'sedan', 'ハッチバック': 'hatchback', '軽自動車': 'kei car', '軽自動車(箱バン)': 'kei van (box van)', '軽トラック': 'kei truck', 'コンパクトカー': 'compact car', 'ワゴン': 'wagon', 'ステーションワゴン': 'station wagon', 'SUV': 'SUV', '小型SUV': 'compact SUV', '車': 'car' };
+  function car(n) { return CAR.hasOwnProperty(n) ? CAR[n] : n; }
+  var DIM = '\\(高さ([\\d.]+)m・長さ([\\d.]+)m・幅([\\d.]+)m\\)';
+  function dim(a, b, c) { return ' (height ' + a + ' m, length ' + b + ' m, width ' + c + ' m)'; }
+  var TITLE = { '車を呼ぶ': 'Call the car', '進めて止める': 'Drive and stop', '長押しで固定': 'Press and hold to secure', '荷締機で緊締': 'Tighten with the load binder', '落とし蓋を開ける': 'Open the pit cover', '輪止めをセット': 'Set the wheel chock' };
+  [
+    [/^(\d)番: (車を呼ぶ|進めて止める|長押しで固定|荷締機で緊締|落とし蓋を開ける|輪止めをセット)$/, function (m) { return 'No.' + m[1] + ': ' + TITLE[m[2]]; }],
+    // 車を呼ぶ
+    [/^これで上の段に車が上がれます。$/, 'Now cars can go up to the upper deck.'],
+    [/^上段は奥の1番から順に積みます\(車は後ろから前へ進むので、先に奥の1番を埋めます\)。$/, 'Load the upper deck from the back, starting with No.1 (cars move from rear to front, so fill the far No.1 first).'],
+    [new RegExp('^「(\\d)番用」の黄色い枠の車、(.+?)' + DIM + 'をタップして呼びましょう。$'), function (m) { return 'Tap the car in the yellow frame marked “for No.' + m[1] + '”, the ' + car(m[2]) + dim(m[3], m[4], m[5]) + ', to call it.'; }],
+    [new RegExp('^次は「(\\d)番用」の黄色い枠の車、(.+?)' + DIM + 'を呼びます。$'), function (m) { return 'Next, call the car in the yellow frame marked “for No.' + m[1] + '”: the ' + car(m[2]) + dim(m[3], m[4], m[5]) + '.'; }],
+    [new RegExp('^(\\d)番に積む「(\\d)番用」の黄色い枠の車、(.+?)' + DIM + 'を呼びます。$'), function (m) { return 'Call the car in the yellow frame marked “for No.' + m[2] + '” to load on No.' + m[1] + ': the ' + car(m[3]) + dim(m[4], m[5], m[6]) + '.'; }],
+    [new RegExp('^「(\\d)番用」の黄色い枠の車、(.+?)' + DIM + 'を呼んでください。$'), function (m) { return 'Call the car in the yellow frame marked “for No.' + m[1] + '”: the ' + car(m[2]) + dim(m[3], m[4], m[5]) + '.'; }],
+    [new RegExp('^7台目、「(\\d)番用」の黄色い枠の車、(.+?)' + DIM + 'を呼びます。$'), function (m) { return 'The 7th car: call the car in the yellow frame marked “for No.' + m[1] + '”, the ' + car(m[2]) + dim(m[3], m[4], m[5]) + '.'; }],
+    [new RegExp('^「(\\d)番用」の黄色い枠の車、(.+?)' + DIM + 'の向きを「後ろ向き\\(バック\\)」にして呼んでください。$'), function (m) { return 'Set the direction of the car in the yellow frame marked “for No.' + m[1] + '”, the ' + car(m[2]) + dim(m[3], m[4], m[5]) + ', to “Reversed (backing in)” and call it.'; }],
+    [/^(\d)番の蓋を開けました。$/, 'The cover of No.$1 is open.'],
+    [/^1番に背の低い車を選ぶ理由: 1番はフロアの位置が高い場所で、しかも下の4番の車の屋根が高いと、1番のフロアがさらに押し上げられるからです\(4番の車は後で積みます\)。$/, 'Why a low car for No.1: the No.1 deck sits high, and if the roof of the car below on No.4 is tall, it pushes the No.1 deck up even further (the No.4 car is loaded later).'],
+    [/^2番に背の高い車\(ミニバン\)を入れる理由: 積んだ高さは、背の低い車を1番・4番、背の高い車を2番・3番に回すと低く収まります\(1番・4番の車の屋根は、上下のフロアを押し上げやすいため\)。$/, 'Why a tall car (minivan) on No.2: the load height stays lower if low cars go on No.1 and No.4 and tall cars on No.2 and No.3 (roofs on No.1 and No.4 tend to push the decks above and below up).'],
+    [/^3番にはセダンを入れます\(1番・4番ほど背が低くなくてかまいません。$/, 'Put a sedan on No.3 (it does not need to be as low as the cars on No.1 and No.4.'],
+    [/^ただし、3番の車の屋根が高いと、3番のフロアを上げた時に積んだ高さが高くなります\)。$/, 'However, if the roof of the No.3 car is tall, the load height gets higher when the No.3 deck is raised.)'],
+    [/^3番にはセダンを入れます\(1番・4番ほど背が低くなくてかまいません。ただし、3番の車の屋根が高いと、3番のフロアを上げた時に積んだ高さが高くなります\)。$/, 'Put a sedan on No.3 (it does not need to be as low as the cars on No.1 and No.4. However, if the roof of the No.3 car is tall, the load height gets higher when the No.3 deck is raised).'],
+    [/^向きは「後ろ向き\(バック\)」で積みます\(車の下の「向き」ボタンで切り替えます\)。$/, 'Load it “Reversed (backing in)” (switch with the “Direction” button under the car).'],
+    [/^向きは「前向き\(頭から\)」のままです。$/, 'Keep the direction “Forward (nose first).”'],
+    [/^黄色い枠の車の「向き」を「後ろ向き\(バック\)」にしてから、車をタップ$/, 'Set the direction of the car in the yellow frame to “Reversed (backing in),” then tap the car'],
+    [/^黄色い枠の車をタップ\(入場します。向きは前向きのまま\)$/, 'Tap the car in the yellow frame (it enters; keep the direction forward)'],
+    [/^向きが前向きです。「後ろ向き\(バック\)」に切り替えてください\(車の下のボタン\)$/, 'The direction is forward. Switch it to “Reversed (backing in)” (button under the car)'],
+    [/^向きが後ろ向きです。「前向き」に戻してください\(車の下のボタン\)$/, 'The direction is reversed. Switch it back to “Forward” (button under the car)'],
+    [/^これで4番へ行けます。$/, 'Now you can reach No.4.'],
+    [/^道板→5番\(スロープ\)→4番扇動板→4番と進みます。$/, 'You go ramp → No.5 (slope) → No.4 bridge plate → No.4.'],
+    [/^4番に背の低い車\(セダン\)を選ぶ理由: 4番の車の屋根が高いと、その上の1番のフロアを押し上げてしまうからです。$/, 'Why a low car (sedan) for No.4: if the No.4 car’s roof is tall, it pushes up the No.1 deck above it.'],
+    [/^また、この車は軽自動車ではないので、6番の横を通るためにスライド車軸の伸ばしが必要でした\(先に済ませてあります\)。$/, 'Also, this car is not a kei car, so the sliding axle had to be extended to pass beside No.6 (already done).'],
+    [/^5番は、7台のサイクルでは「後ろ向き\(バック\)」で積みます\(鼻先を宙段フロア側へ向けると、宙段フロアが持ち上がる時に、低いボンネットの上を通れるからです\)。$/, 'In the 7-car cycle, No.5 is loaded “Reversed (backing in).” With the nose toward the hanging deck, the hanging deck passes over the low hood when it lifts.'],
+    [/^5番にこの車を選んだ理由: 宙段フロアの下に入るので、ボンネットが低く短い車が向きます。$/, 'Why this car for No.5: it goes under the hanging deck, so a car with a low, short hood suits it.'],
+    [/^ここでは長さ3.9mのハッチバックです。$/, 'Here it is a hatchback 3.9 m long.'],
+    [/^道板から、下段の床をまっすぐ後ろへ進み、5番\(積んだ車\)の脇を通って宙段フロアのスロープに乗ります。$/, 'From the ramp, drive straight back along the lower deck, pass beside No.5 (the loaded car), and climb onto the hanging deck slope.'],
+    [/^宙段フロアに載せた車の屋根は、持ち上げた宙段フロアの上で、2番・3番のフロアの下に収まらないといけません。$/, 'The roof of the car on the hanging deck must fit under the No.2 and No.3 decks once the hanging deck is raised.'],
+    [/^それで、背の低い車\(スポーツタイプ\)にしています。$/, 'That is why a low car (sports car) is used.'],
+    [/^背の高い車だと、積んだ高さが高くなりすぎます。$/, 'A tall car would make the load height too high.'],
+    [/^6番には、幅が1.755m以下の車しか載せられません\(それより広い車は、タイヤが張り出す位置に当たります\)。$/, 'Only cars 1.755 m wide or less can go on No.6 (wider cars hit the place where the tires stick out).'],
+    [/^6番には軽自動車を入れます。$/, 'Put a kei car on No.6.'],
+    [/^幅は1.48mなので、6番に積めます\(6番に積む\(止まる\)だけなら、スライド車軸の伸ばしの有無は関係ありません\)。$/, 'Its width is 1.48 m, so it fits on No.6 (for just loading (stopping) on No.6, it does not matter whether the sliding axle is extended).'],
+    [/^6番は宙段フロアの下に入るので、車が高いと宙段フロアが当たりますが、前の手順で輪止めを後ろへ寄せたので、車の鼻は宙段フロアの動きに当たりません。$/, 'No.6 goes under the hanging deck, so a tall car would hit it, but you moved the wheel chock back in the earlier step, so the car’s nose does not hit the moving hanging deck.'],
+    [/^7台目を積んだあとなので、宙段フロアの下\(6番の床\)はあいています。$/, 'Since the 7th car is already loaded, the space under the hanging deck (the No.6 floor) is clear.'],
+    // 長押し・荷締機
+    [/^車を固定したら、荷締機\(ワイヤーを張る道具\)のハンドルを回して、タイヤの前後にかけたワイヤーを張ります。$/, 'Once the car is secured, turn the handle of the load binder (a tool that tightens wires) to tighten the wires hooked around the tires, front and back.'],
+    [/^これを「緊締」と言って、走行中やフロアを動かす時に、車が動かないようにします。$/, 'This is called “lashing tight,” and it keeps the car from moving while driving or when the decks move.'],
+    [/^1台ごとに、固定したら荷締機でも緊締します。$/, 'For each car, after securing it, tighten it with the load binder too.'],
+    [/^スロット「(\d)」を選んで、「荷締機を回す」を (\d+) 回押してください。$/, 'Select slot “$1” and press “Turn the load binder” $2 times.'],
+    [/^下のスロット「(\d)」を押す$/, 'Press slot “$1” below'],
+    [/^「荷締機を回す」を押す\(いま (\d+)\/(\d+)\)$/, 'Press “Turn the load binder” (now $1/$2)'],
+    [/^出来ました\(緊締済み\)。$/, 'Done (lashed tight).'],
+    [/^できました。$/, 'Done.'],
+    // 輪止め
+    [/^5番の輪止めは、標準で一番前\(キャビン側\)に付きます。$/, 'The No.5 wheel chock is normally at the very front (cab side).'],
+    [/^でも、一番前だと車が前へ寄りすぎて、4番の車の後ろ端にぶつかります。$/, 'But at the very front, the car sits too far forward and hits the rear end of the No.4 car.'],
+    [/^かといって後ろすぎると、宙段フロアを持ち上げる時の車の鼻の余裕が足りなくなります。$/, 'And too far back leaves too little clearance for the car’s nose when the hanging deck lifts.'],
+    [/^そこで、基準から前へ (\d+)cm\((\d+)段\)の位置にします。$/, 'So set it $1 cm ($2 steps) forward from the standard position.'],
+    [/^「輪止めを後ろへ」で合わせてください。$/, 'Adjust it with “Chock to rear.”'],
+    [/^輪止めを基準から前へ (\d+) 段にする\(いま (\d+) 段\)$/, 'Set the wheel chock $1 steps forward from the standard (now $2 steps)'],
+    [/^6番の輪止めを基準の位置にすると、6番の車の鼻が、持ち上げた宙段フロア\(と、その上の車\)に当たります。$/, 'With the No.6 wheel chock at the standard position, the nose of the No.6 car hits the raised hanging deck (and the car on it).'],
+    [/^そこで、基準から後ろへ (\d+)cm\((\d+)段\)の位置にします\(車がその分、後ろに止まります\)。$/, 'So set it $1 cm ($2 steps) back from the standard position (the car stops that much farther back).'],
+    [/^「輪止めを後ろへ」を (\d+) 回押して合わせてください。$/, 'Press “Chock to rear” $1 times to adjust it.'],
+    [/^輪止めを基準から後ろへ (\d+) 段にする\(いま (\d+) 段\)$/, 'Set the wheel chock $1 steps back from the standard (now $2 steps)'],
+    // いまやること(ピン・ジャッキ・車軸)
+    [/^「右引」と「左引」を押す\(いま 右=(ロック|解除) \/ 左=(ロック|解除)\)$/, function (m) { var w = { 'ロック': 'locked', '解除': 'unlocked' }; return 'Press “Right-Pull” and “Left-Pull” (now right = ' + w[m[1]] + ' / left = ' + w[m[2]] + ')'; }],
+    [/^「右押」と「左押」を押す\(いま 右=(ロック|解除) \/ 左=(ロック|解除)\)$/, function (m) { var w = { 'ロック': 'locked', '解除': 'unlocked' }; return 'Press “Right-Push” and “Left-Push” (now right = ' + w[m[1]] + ' / left = ' + w[m[2]] + ')'; }],
+    [/^「伸」を押す\(いま (縮んでいる|伸びている)\)$/, function (m) { return 'Press “Extend” (now ' + (m[1] === '縮んでいる' ? 'retracted' : 'extended') + ')'; }],
+    [/^▲を一瞬だけ押して、フロアをピンから浮かせる$/, 'Tap ▲ briefly to lift the deck off the pin'],
+    [/^① ▲を一瞬だけ押して、フロアをピンから浮かせる → ②「抜く」でピンを抜く\(走行位置のピン\)$/, '① Tap ▲ briefly to lift the deck off the pin → ② Press “Pull” to pull the pin (the travel-position pin)'],
+    [/^① ▲を一瞬だけ押して、フロアをピンから浮かせる → ②「抜く」でピンを抜く$/, '① Tap ▲ briefly to lift the deck off the pin → ② Press “Pull” to pull the pin'],
+    [/^(\d番 [前後]): ▲を押して、一番上まで上げ直す$/, function (m, t) { return t(m[1]) + ': Press ▲ to raise it to the top again'; }],
+    [/^(\d番 [前後]): ▲ → (\d番 [前後]): ▲\(交互に繰り返す\)$/, function (m, t) { return t(m[1]) + ': ▲ → ' + t(m[2]) + ': ▲ (repeat, alternating)'; }],
+    [/^▼を押し続ける\(約1秒たつと5番が動き出します\)$/, 'Keep pressing ▼ (after about 1 second, No.5 starts to move)'],
+    [/^▲を押し続ける\(止まるまで\)$/, 'Keep pressing ▲ (until it stops)'],
+    [/^宙段フロアの ▲ を押し続ける\(止まるまで\)$/, 'Keep pressing ▲ on the hanging deck (until it stops)'],
+    [/^(\d番 [前後]): 違う穴\((\d+)番\)に差してあります。$/, function (m, t) { return t(m[1]) + ': the pin is in a different hole (No.' + m[2] + ').'; }],
+    [/^▲を一瞬押してフロアを浮かせ、「抜く」で抜く$/, 'Tap ▲ briefly to lift the deck, then press “Pull” to pull the pin'],
+    [/^(\d番 [前後]): 下げ過ぎです。$/, function (m, t) { return t(m[1]) + ': It is lowered too far.'; }],
+    [/^▲で少し上げる\(ピンは穴より上のフロアにしか差せません\)$/, 'Raise it a little with ▲ (the pin can only be inserted when the deck is above the hole)'],
+    [/^(\d番 [前後]): 違う穴\((\d+)番\)に差してあります。▲を一瞬押してフロアを浮かせ、「抜く」で抜く$/, function (m, t) { return t(m[1]) + ': the pin is in a different hole (No.' + m[2] + '). Tap ▲ briefly to lift the deck, then press “Pull” to pull the pin'; }],
+    [/^固定ピンの位置を「(\d+)」にして、差した状態にする\(いま (差してある|抜いてある) \/ 位置 (\d+)\)$/, function (m) { return 'Set the stop pin position to “' + m[1] + '” and insert it (now ' + (m[2] === '差してある' ? 'inserted' : 'pulled out') + ' / position ' + m[3] + ')'; }],
+    [/^7台とも積めました。$/, 'All 7 cars are loaded.'],
+    [/^いま、3番 前・3番 後は、車を積むために一番上まで上げたままです。$/, 'Right now, No.3 front and No.3 rear are still raised to the top to load the cars.'],
+    [/^積み込みが終わったら、上のフロアは、下の車や宙段フロアに当たらない範囲で、できるだけ低く下げて、セットピンで固定します\(2番 前 → 3番 前 → 3番 後の順\)。$/, 'When loading is done, lower the upper decks as far as they can go without hitting the cars below or the hanging deck, and fix them with set pins (in the order No.2 front → No.3 front → No.3 rear).'],
+    [/^画面上の「積んだ高さ」\(積んだ状態の一番高い所\)が、高さ制限\(4.1m。$/, 'This is because points are deducted when the “load height” on screen (the highest point of the loaded rig) exceeds the height limit (4.1 m.'],
+    [/^標準は3.8m\)を超えると減点されるからです。$/, 'The standard is 3.8 m).'],
+    [/^この荷物では、2番 前を (\d+) 番、3番 前を (\d+) 番、3番 後を (\d+) 番の穴の高さにします\(計算で出した、当たらない一番低い高さです\)。$/, 'For this load, set No.2 front to hole $1, No.3 front to hole $2, and No.3 rear to hole $3 (the lowest heights that do not hit anything, worked out by calculation).'],
+    [/^(\d番 [前後]): 違う穴\((\d+)番\)に差してあります。$/, function (m, t) { return t(m[1]) + ': the pin is in a different hole (No.' + m[2] + ').'; }],
+    [/^残り: (.+)$/, function (m) { return 'Remaining: ' + m[1].split(' / ').map(function (x) { var r = /^(\d)番の車が未積載$/.exec(x); return r ? 'No.' + r[1] + ' car not loaded' : x; }).join(' / '); }]
+  ].forEach(function (x) { P.push(x); });
+})();
