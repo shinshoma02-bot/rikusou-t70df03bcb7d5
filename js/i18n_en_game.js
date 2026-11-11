@@ -187,7 +187,7 @@ Object.assign(window.I18N_EN, {
     [/^5番にこの車を選んだ理由: 宙段フロアの下に入るので、ボンネットが低く短い車が向きます。$/, 'Why this car for No.5: it goes under the hanging deck, so a car with a low, short hood suits it.'],
     [/^ここでは長さ3.9mのハッチバックです。$/, 'Here it is a hatchback 3.9 m long.'],
     [/^道板から、下段の床をまっすぐ後ろへ進み、5番\(積んだ車\)の脇を通って宙段フロアのスロープに乗ります。$/, 'From the ramp, drive straight back along the lower deck, pass beside No.5 (the loaded car), and climb onto the hanging deck slope.'],
-    [/^宙段フロアに載せた車の屋根は、持ち上げた宙段フロアの上で、2番・3番のフロアの下に収まらないといけません。$/, 'The roof of the car on the hanging deck must fit under the No.2 and No.3 decks once the hanging deck is raised.'],
+    [/^宙段フロアに載せた車の屋根は、持ち上げた宙段フロアの上で2番・3番のフロアの下に収まらないといけません。$/, 'The roof of the car on the hanging deck must fit under the No.2 and No.3 decks once the hanging deck is raised.'],
     [/^それで、背の低い車\(スポーツタイプ\)にしています。$/, 'That is why a low car (sports car) is used.'],
     [/^背の高い車だと、積んだ高さが高くなりすぎます。$/, 'A tall car would make the load height too high.'],
     [/^6番には、幅が1.755m以下の車しか載せられません\(それより広い車は、タイヤが張り出す位置に当たります\)。$/, 'Only cars 1.755 m wide or less can go on No.6 (wider cars hit the place where the tires stick out).'],
