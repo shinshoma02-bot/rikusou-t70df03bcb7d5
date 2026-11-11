@@ -857,7 +857,7 @@
     var inAt = [pr[0] + Math.cos(rr) * C.innerStart, pr[1] + Math.sin(rr) * C.innerStart];
     drawStrip('chuudan_post_inner', LR - C.innerStart, inAt, degR, 0);
     drawStrip('chuudan_post_outer', C.outerLen, pr, degR, 0);
-    // 後ろの柱のセットピン(外筒の口に差す。素材 images.pin_rear があればそれ、無ければ仮の丸とピン。R13)
+    // 後ろの柱のセットピン(外筒の口に刺す。素材 images.pin_rear があればそれ、無ければ仮の丸とピン。R13)
     var mouth = [pr[0] + Math.cos(rr) * 90, pr[1] + Math.sin(rr) * 90];   // 外筒のピン穴(外筒の画像 x=100 − pivot 10 = 付け根から90px)
     if (images.pin_rear) { ctx.save(); ctx.translate(mouth[0], mouth[1]); ctx.rotate(rr); ctx.drawImage(images.pin_rear, -6, -6); ctx.restore(); }
     else { ctx.save(); ctx.translate(mouth[0], mouth[1]); ctx.rotate(rr); ctx.fillStyle = '#c33'; ctx.strokeStyle = 'rgba(0,0,0,.6)'; ctx.lineWidth = 1; ctx.fillRect(-10, -9, 4, 18); ctx.strokeRect(-10, -9, 4, 18); ctx.fillStyle = '#d9dde0'; ctx.beginPath(); ctx.arc(-8, 0, 3, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); ctx.restore(); }
@@ -926,7 +926,7 @@
     ctx.drawImage(images.chuudan_base, pr[0] - C.base.pivot[0], pr[1] - C.base.pivot[1]);
     if (images.hang_pit_front) ctx.drawImage(images.hang_pit_front, C.pitFront[0], C.pitFront[1]);
   }
-  // フレーム側の固定ピン(D25): 赤い差し込み板はフレームの絵(frame_front)にある。差してある時は、穴の位置にピンの頭(stop_pin。12×12・pivot [5,5]=穴の中心)を、前景フレームの後に描く。
+  // フレーム側の固定ピン(D25): 赤い刺し込み板はフレームの絵(frame_front)にある。刺してある時は、穴の位置にピンの頭(stop_pin。12×12・pivot [5,5]=穴の中心)を、前景フレームの後に描く。
   // pts は『ピンの上面』の位置で、穴の中心はその3px 下。素材が読めない時だけ仮の丸
   function drawStopPin() {
     var fm = window.FLOOR_MECH, SPc = fm && fm.stopPinCfg;
@@ -1979,8 +1979,8 @@
     ctx.restore();
     return true;
   }
-  // セットピン: 柱の穴は横から見えないので、見えるのは差したピンの赤いコの字の取手だけ(柱の前の面から前へ出る)。
-  // 抜いている間は、鎖でぶら下がる絵を、次に差す穴(ピンボタンの番号)の位置に出す。位置は pinMarks(そのフロアの端の柱のx、フロアが走行位置の絵の時のy)+ピンの上下量
+  // セットピン: 柱の穴は横から見えないので、見えるのは刺したピンの赤いコの字の取手だけ(柱の前の面から前へ出る)。
+  // 抜いている間は、鎖でぶら下がる絵を、次に刺す穴(ピンボタンの番号)の位置に出す。位置は pinMarks(そのフロアの端の柱のx、フロアが走行位置の絵の時のy)+ピンの上下量
   function drawPins() {
     var fm = window.FLOOR_MECH;
     if (!NA || !images.pin || !fm || !fm.PINS) return;

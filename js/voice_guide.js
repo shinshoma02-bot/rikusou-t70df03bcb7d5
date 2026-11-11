@@ -67,7 +67,7 @@
  {
   "id": "tut_13",
   "title": "2番 前を {UP} で戻す",
-  "line": "5番がスロープに乗ったら、2番の前を{UP}で戻す。"
+  "line": "5番がスロープになったら、2番の前の{UP}ボタンを押してフロアを固定する。"
  },
  {
   "id": "tut_14",
@@ -197,7 +197,7 @@
  {
   "id": "tut_39",
   "title": "なぜ台車の車軸を伸ばすのか",
-  "line": "タイヤを外に出さないとほとんどの車が積めない"
+  "line": "タイヤを外に出さないとほとんどの車が積めない。"
  }
 ];
   var BY_TITLE = {}; TABLE.forEach(function (o) { BY_TITLE[o.title] = o; });
@@ -238,7 +238,7 @@
     var list = FILES[kind];
     play(list[Math.floor(Math.random() * list.length)]);
   }
-  // 音設定の画面に、声の行を足す(sound.js の画面を変えずに、ここで差し込む)
+  // 音設定の画面に、声の行を足す(sound.js の画面を変えずに、ここで刺し込む)
   function row(label, body) {
     var r = document.createElement("div"); r.className = "sfx-row guideRow";
     r.innerHTML = '<div class="sfx-label"><span>' + label + '</span></div>';

@@ -236,7 +236,7 @@
   }
 
   // 2ボタン押ボタン(上・下)。押している間、そのフロア(ジャッキ・宙段フロア)が動く
-  // 後ろの柱(宙段フロア): シリンダーのように、押している間だけ連続で伸び縮みする(2026-10-08 ユーザー指示。以前は内側パイプの穴にピンを差す6段階)
+  // 後ろの柱(宙段フロア): シリンダーのように、押している間だけ連続で伸び縮みする(2026-10-08 ユーザー指示。以前は内側パイプの穴にピンを刺す6段階)
   function rearPinCard(item) {
     var card = document.createElement('div'); card.className = 'swCard';
     var lab = document.createElement('div'); lab.className = 'swLabel'; lab.textContent = item.label; card.appendChild(lab);
@@ -264,7 +264,7 @@
     var b = document.getElementById('rearPinLabel'), r = fm.rearLenRange ? fm.rearLenRange() : [0, 1];
     if (b) b.textContent = '柱 ' + Math.round(fm.rearPinLen() / window.TRAILER_CONFIG.pxPerMeter * 100) + 'cm';
   }
-  // フレーム側の固定ピン(赤い板): 位置を前後5段階で変える・抜き差し。刺してあると、上げた宙段フロアのフロアがピンに当たって止まる
+  // フレーム側の固定ピン(赤い板): 位置を前後5段階で変える・抜き刺し。刺してあると、上げた宙段フロアのフロアがピンに当たって止まる
   function stopPinCard(item) {
     var card = document.createElement('div'); card.className = 'swCard';
     var lab = document.createElement('div'); lab.className = 'swLabel'; lab.textContent = item.label; card.appendChild(lab);
@@ -303,7 +303,7 @@
     pressable(down, 'btn_cap_shita_big', function () { startHold(item.jack ? -1 : 1); }, stopHold);
     b.appendChild(up); b.appendChild(down);
     card.appendChild(b);
-    if (item.end === 'F7') {   // 宙段フロア: セットピンは廃止。真ん中のボタンはフレーム側の固定ピン(赤い板)の抜き差し、−/＋はその位置(前→後ろ5段階)
+    if (item.end === 'F7') {   // 宙段フロア: セットピンは廃止。真ん中のボタンはフレーム側の固定ピン(赤い板)の抜き刺し、−/＋はその位置(前→後ろ5段階)
       var row7 = document.createElement('div'); row7.className = 'pinRow';
       var m7 = document.createElement('button'); m7.className = 'pinStep'; m7.textContent = '−';
       var p7 = document.createElement('button'); p7.className = 'pinBtn'; p7.id = 'stopPinLabel'; p7.dataset.sw = 'pin'; m7.dataset.sw = 'minus';
@@ -390,9 +390,9 @@
       var on = fm.PINS[k] !== null;
       btn.textContent = on ? ('抜く(' + fm.holeNo(k, fm.PINS[k]) + ')') : ('ピン' + fm.pinTarget(k));
       btn.classList.toggle('on', on);
-      var floating = on && !fm.rested(k);   // ピンは差してあるが、フロアがまだピンに載っていない(▼で載せる)
+      var floating = on && !fm.rested(k);   // ピンは刺してあるが、フロアがまだピンに載っていない(▼で載せる)
       btn.classList.toggle('float', floating);
-      btn.title = floating ? 'ピンは差してあります。フロアがまだピンに載っていません(▼で、フロアをピンに載せてください)' : '';
+      btn.title = floating ? 'ピンは刺してあります。フロアがまだピンに載っていません(▼で、フロアをピンに載せてください)' : '';
     });
   }
   function updateTirePanel() {

@@ -74,7 +74,7 @@
   // ---- 3番後ろ(F3r)のピンは、柱(x=post.x)で3番フロアを受ける(2026-10-08 ユーザー指摘「フロアとピンの動きが連動していない」)----
   // 3番フロアは、前=3番前(MID。x=1520)・後ろ=3番後ろ(F3r。x=2055)の2点で決まる直線。柱の位置(x=1795)のフロアの上下量は P = MID + (F3r − MID)×r(r=(柱−前)/(後ろ−前)≒0.514)。
   // ピンの高さは柱で固定(1穴=post.pitch)。フロアがピンに載る=柱の位置のフロアが P(穴) になる。だから、3番前(MID)を動かすと、同じ穴に載る3番後ろの高さも変わる。
-  // PINS.F3r は、今の3番前で換算した「3番後ろの載る高さ」(他のフロアと同じ意味)を返す(getter)。差してある穴の柱での高さは F3_PIN_POST に持つ。
+  // PINS.F3r は、今の3番前で換算した「3番後ろの載る高さ」(他のフロアと同じ意味)を返す(getter)。刺してある穴の柱での高さは F3_PIN_POST に持つ。
   var F3P = floorsCfg.ends.F3r.post || null, F3 = null, F3_PIN_POST = null, F3_PT = 0;
   if (F3P) F3 = { r: (F3P.x - floorsCfg.mid[0]) / (floorsCfg.defs.F3.rearPt[0] - floorsCfg.mid[0]), pp: F3P.pitch, pd: F3P.pitchDown || F3P.pitch };
   function f3Post(R, mid) { return mid + (R - mid) * F3.r; }
@@ -86,10 +86,10 @@
     F3_PT = f3Post(ENDS.F3r.travel, ENDS.MID.travel);   // 走行位置(10番)のピンの、柱での高さ
     Object.defineProperty(PINS, 'F3r', { enumerable: true, get: function () { return F3_PIN_POST === null ? null : f3R(F3_PIN_POST, ENDS.MID.off); }, set: function (v) { F3_PIN_POST = v === null ? null : f3Post(v, ENDS.MID.off); } });
   }
-  // 描画用: 差したピンの(走行位置の穴を0とした)柱での高さ(下向きが正)。F3r 以外は null
+  // 描画用: 刺したピンの(走行位置の穴を0とした)柱での高さ(下向きが正)。F3r 以外は null
   function pinPostOfHole(h) { return F3 ? f3PostOfHole(h) - F3_PT : 0; }   // 描画用: 穴hの柱での高さ(走行位置の穴=0、下向きが正)
   function pinPostRel(k) { return k === 'F3r' && F3 && F3_PIN_POST !== null ? F3_PIN_POST - F3_PT : null; }
-  // 柱の穴番号(実車の番号): 最下段=0番(ピンなし)、走行位置=hole番、ピンを差せる最大=holeMax番(フロアの上限の1穴下)。
+  // 柱の穴番号(実車の番号): 最下段=0番(ピンなし)、走行位置=hole番、ピンを刺せる最大=holeMax番(フロアの上限の1穴下)。
   // フロアの絵(off=0)は変えずに番号を当てはめるので、走行位置より上と下で1穴の間隔が違う(上は細かい)。
   function pitchUp(k) { if (k === 'F3r' && F3) return F3.pp / F3.r; var e = ENDS[k]; return e.pitchUpPx || (e.travel - e.r[0]) / (e.holeMax - e.hole + 1); }   // pitchUp(設定): 穴の間隔を実車に合わせて決めているフロア(2番前)
   function pitchDown(k) { if (k === 'F3r' && F3) return F3.pp / F3.r; var e = ENDS[k]; return e.pitchDownPx || (e.hole > 0 ? (e.r[1] - e.travel) / e.hole : 0); }   // pitchDown(設定): 走行位置より下の穴の間隔を決めているフロア(3番後ろ。設定が無ければ、下の可動域を穴の数で割る)
@@ -105,7 +105,7 @@
     return h >= e.hole ? e.travel - (h - e.hole) * pitchUp(k) : e.travel + (e.hole - h) * pitchDown(k);
   }
   function pinLimitOff(k) { return offOfHole(k, ENDS[k].holeMax); }
-  // ピンを差せる穴番号の範囲(0番はピンなしの最下段なので1番から)
+  // ピンを刺せる穴番号の範囲(0番はピンなしの最下段なので1番から)
   function holeRange(k) { return { top: ENDS[k].holeMax, bottom: 1 }; }
   function snapToHole(k, off) { return offOfHole(k, Math.max(1, Math.min(ENDS[k].holeMax, holeNo(k, off)))); }
   function lowOf(k) { return PINS[k] !== null ? PINS[k] : ENDS[k].r[1]; }
@@ -115,8 +115,8 @@
     var r = holeRange(k);
     return Math.max(r.bottom, Math.min(r.top, PIN_TARGET[k]));
   }
-  // フロアを動かしている間、そのフロアの近くの『フロアより下の差し込み口』を自動でピンの番号にする(あとから−/＋で変えられる)。
-  // フロアがちょうど10番の真上にいる時は9番、10番を超えて上がったら10番(ピンはフロアの下に差してフロアを受ける)
+  // フロアを動かしている間、そのフロアの近くの『フロアより下の刺し込み口』を自動でピンの番号にする(あとから−/＋で変えられる)。
+  // フロアがちょうど10番の真上にいる時は9番、10番を超えて上がったら10番(ピンはフロアの下に刺してフロアを受ける)
   function autoPinTarget(k) {
     if (PINS[k] !== null || !ENDS[k] || ENDS[k].holeMax === undefined) return;
     var e = ENDS[k], best = 1;
@@ -130,25 +130,25 @@
   function togglePin(k) {
     if (PINS[k] === null) {
       var h = pinTarget(k), off = offOfHole(k, h);
-      if (off < ENDS[k].off - 0.5) { onWarn(ENDS[k].label + 'のフロアを' + h + '番より上に上げてからピンを差してください'); return; }
+      if (off < ENDS[k].off - 0.5) { onWarn(ENDS[k].label + 'のフロアを' + h + '番より上に上げてからピンを刺してください'); return; }
       PINS[k] = off; PIN_TARGET[k] = h;
-      onInfo(ENDS[k].label + ' ' + h + '番の穴にセットピンを差した');
+      onInfo(ENDS[k].label + ' ' + h + '番の穴にセットピンを刺した');
     } else {
       if (k === 'F2f' && MECH.lift > 0) { onWarn('5番フロアの前を下げきってからセットピンを抜いてください'); return; }
       // フロアがセットピンに載って固定されている間は抜けない(少し上げて、ピンが空いてから抜く)
       if (ENDS[k].off >= PINS[k] - 1) { onWarn(ENDS[k].label + 'のフロアがセットピンに載っているので抜けません。少し上げてから抜いてください'); return; }
       PINS[k] = null;
-      autoPinTarget(k);   // ピンを刺したままフロアを上げてから抜いた時は、その位置の『フロアより下の差し込み口』を自動で入力する
+      autoPinTarget(k);   // ピンを刺したままフロアを上げてから抜いた時は、その位置の『フロアより下の刺し込み口』を自動で入力する
       onInfo(ENDS[k].label + 'のセットピンを抜いた');
     }
   }
 
-  // 初期状態(走行位置): 全てのフロアを走行位置に置き、セットピンを差して固定した状態。3番の前だけはピンを差さない
+  // 初期状態(走行位置): 全てのフロアを走行位置に置き、セットピンを刺して固定した状態。3番の前だけはピンを刺さない
   // フレーム側の固定ピン(赤い板。2枚目の写真): 宙段フロアを上げて車を載せた時に、フロアの下面がこのピンに当たって止まる。前後に5段階の位置(SP_CFG.xs)。ピン穴の位置で止まる高さ(loadU)が決まる
   var SP_CFG = (cfg.hangFloor && cfg.hangFloor.stopPin) || null;
   var SP = { hole: SP_CFG ? SP_CFG.hole : 1, inserted: true };   // pts=[x,y]の5つ(前→後ろ。斜めの柱に沿って並ぶ)
   function initPins() {
-    SP.inserted = true;   // 固定ピンは赤い板に最初から差してある(フロアの位置に関係なく抜き差しできる)
+    SP.inserted = true;   // 固定ピンは赤い板に最初から刺してある(フロアの位置に関係なく抜き刺しできる)
     Object.keys(floorsCfg.ends).forEach(function (k) {
       ENDS[k].off = ENDS[k].travel;
       if (k === 'F7' && typeof MECH !== 'undefined' && MECH) { MECH.hang = 0; MECH.lockR = MECH.lockL = true; }   // サイクルのリセットで宙段フロアも格納に戻し、車軸のロックも掛かった状態にする
@@ -156,20 +156,20 @@
       else { PINS[k] = ENDS[k].travel; PIN_TARGET[k] = ENDS[k].hole; }
     });
   }
-  // フロアがセットピンに載って固定されているか(ピンを差さない端は常にtrue)。
-  // ピン穴はフロアの今の位置以下にしか差せないので、1穴分の隙間までは「載っている」とみなす
+  // フロアがセットピンに載って固定されているか(ピンを刺さない端は常にtrue)。
+  // ピン穴はフロアの今の位置以下にしか刺せないので、1穴分の隙間までは「載っている」とみなす
   // フロアがセットピン(3番前は下端)にしっかり載って固定されているか(ピンを刺しただけでなく、フロアがピンに載っている)
   function rested(k) {
     var e = ENDS[k];
     if (k === 'F7') return MECH.hang <= 0.01 || (SP.inserted && Math.abs(MECH.hang - HANG.loadU) < 0.03);   // 宙段フロア: 格納か、固定ピン(赤い板)に載って止まっている
     if (e.noTravelPin) return e.off >= e.travel - 1.5 || (PINS[k] !== null && e.off >= PINS[k] - restTol(k) - 0.5);   // 3番前も、フロアの少し下にピンがあれば固定扱い(フロアをそのピンまで下げ切っていなくてよい)
-    // 支柱の短いフロア(2番前): ピンを一番上の穴に差して昇降させた(伸ばした)状態は、ピンより上でも固定されている
+    // 支柱の短いフロア(2番前): ピンを一番上の穴に刺して昇降させた(伸ばした)状態は、ピンより上でも固定されている
     if (e.freeTop !== undefined && PINS[k] !== null && PINS[k] <= pinLimitOff(k) + 0.5) return true;
-    // フロアが走行位置まで下がっていなくても、フロアの少し下(最大2穴分)にピンが差してあれば固定されているとみなす(下段の車を積む間はフロアを上げたままにするので、ピンはフロアの位置付近に差せばよい。フロアをそのピンまで下げ切っている必要はない。2026-10-06 ユーザー指示)
+    // フロアが走行位置まで下がっていなくても、フロアの少し下(最大2穴分)にピンが刺してあれば固定されているとみなす(下段の車を積む間はフロアを上げたままにするので、ピンはフロアの位置付近に刺せばよい。フロアをそのピンまで下げ切っている必要はない。2026-10-06 ユーザー指示)
     return PINS[k] !== null && e.off >= PINS[k] - restTol(k) - 0.5;
   }
   // ピンの下にフロアが入っていても「載っている」とみなす隙間(2穴分。ただし穴の間隔が8pxを超えるフロア(3番後ろ 14.4px)は、7pxまで)
-  // 2026-10-27 ユーザー報告『3番の柱にセットピンを差しているのに、差していない扱いになる』: 3番後ろは穴の間隔が14.4pxと広く、フロアの少し下の一番近い穴(自動で入る)に差すと、フロアはピンの最大14.4px上に浮く。許す隙間が7pxだと、差しただけでは半分の位置で判定が通らなかった。
+  // 2026-10-27 ユーザー報告『3番の柱にセットピンを刺しているのに、刺していない扱いになる』: 3番後ろは穴の間隔が14.4pxと広く、フロアの少し下の一番近い穴(自動で入る)に刺すと、フロアはピンの最大14.4px上に浮く。許す隙間が7pxだと、刺しただけでは半分の位置で判定が通らなかった。
   //  → 1穴分(間隔+0.1px)まで許す。それより離れている(ピンが下の穴のまま)時は、従来どおり『載っていない』
   function restTol(k) { var pp = pitchUp(k); return pp > 8 ? pp + 0.1 : 2 * pp; }
   function floorPinsOk(id) { var f = FLOORS[id]; return rested(f.front.end) && rested(f.rear.end); }
@@ -190,7 +190,7 @@
   //  段階1(u 0→lockU): 前の柱が θ 0→theta1 まで持ち上がり、後ろの取付点は地面(groundY)を前へ滑る → 後ろの柱が縮む。
   //  段階2(u lockU→2): 後ろの柱の可動部が固定され(rearMin)、固定長の柱として前の柱に連動してフロア後ろ側も浮く(円と円の交点)。θ が rearGrowTheta を超えたら rearMax まで再び伸びる。
   var LK = HANG.linkage, CH = cfg.newArt.chuudan;   // 付け根(pivotF/pivotR)は描画と同じ newArt.chuudan の値
-  // 後ろの柱のセットピン: 内側の角パイプの穴(RP_CFG.holes個、pitch px間隔)に差す。1番穴=一番縮む(rearMin)、番号が増えるほど縮み幅が小さい(長さ rearMin+(n-1)×pitch)。
+  // 後ろの柱のセットピン: 内側の角パイプの穴(RP_CFG.holes個、pitch px間隔)に刺す。1番穴=一番縮む(rearMin)、番号が増えるほど縮み幅が小さい(長さ rearMin+(n-1)×pitch)。
   var RP_CFG = HANG.rearPin || { holes: 1, pitch: 0, hole: 1 };
   var RP = { hole: RP_CFG.hole || 1, len: LK.rearMin + ((RP_CFG.hole || 1) - 1) * (RP_CFG.pitch || 0), theta1: LK.theta1 };
   var REAR_LEN_MAX = LK.rearMax || (LK.rearMin + (RP_CFG.holes || 1) * (RP_CFG.pitch || 0));   // 後ろの柱を伸ばせる上限(2026-10-08 ユーザー指示: 柱はシリンダーのように連続で伸び縮みさせる)
@@ -918,13 +918,13 @@
     return null;
   }
   // 2番前のシリンダーが5番フロアを持ち上げられる量は、2番前(ピン)の位置で変わる。走行位置(ピン9番)の低い位置では、シリンダーの長さが足りず
-  // 4番の高さ(スロープ)まで届かない(4番と5番がつながらない)。ピンを上の穴に差すほど持ち上がる量が増える(ピン18番で上限 LIFT_MAX)
+  // 4番の高さ(スロープ)まで届かない(4番と5番がつながらない)。ピンを上の穴に刺すほど持ち上がる量が増える(ピン18番で上限 LIFT_MAX)
   var LIFT_PER_PX = 1.98;
   function liftMaxAt(f2off) { return Math.max(0, Math.min(LIFT_MAX, LIFT_MAX - LIFT_PER_PX * (f2off - offOfHole('F2f', ENDS.F2f.holeMax)))); }
   function liftProblem(nl) {
     if (nl < 0) return MECH.lift > 0 ? null : '5番フロアは下がりきってる';
     if (nl > LIFT_MAX) return '可動範囲いっぱい';
-    if (nl > liftMaxAt(ENDS.F2f.off) && nl > MECH.lift) return 'シリンダーが伸びきりました。2番前のセットピンを上の穴に差し直すと、もっと持ち上がります';
+    if (nl > liftMaxAt(ENDS.F2f.off) && nl > MECH.lift) return 'シリンダーが伸びきりました。2番前のセットピンを上の穴に刺し直すと、もっと持ち上がります';
     if (nl > MECH.lift) {
       var f2b = onFloor('F2', 1039, 347)[1], top5 = 510 - nl - 22;
       if (top5 < f2b + 2) return '2番フロアに当たる(2番を上げた位置でセットピンを入れて)';
@@ -1040,7 +1040,7 @@
     // ピンは「その上に載ったフロア」を受けるだけ。ピンより下のフロアは、可動範囲の下限(接地)まで下げられる
     if (PINS[h.end] !== null && ENDS[h.end].off > PINS[h.end] + 0.5) lo = ENDS[h.end].r[1];
     lo = Math.max(lo, ENDS[h.end].off);
-    // 支柱の短いフロア(2番前)は、ピン無しで上がるのは freeTop まで。ピンを一番上の穴に差し、かつ5番フロアがスロープ(ストッパーに乗った状態)の時だけ、赤テープ付近(range の上限)まで上がる。
+    // 支柱の短いフロア(2番前)は、ピン無しで上がるのは freeTop まで。ピンを一番上の穴に刺し、かつ5番フロアがスロープ(ストッパーに乗った状態)の時だけ、赤テープ付近(range の上限)まで上がる。
     // 5番フロアを平らに戻したら、ピンが上限の穴のままでも freeTop まで(2026-10-07 ユーザー指示)。
     // ピンを抜いた時にすでに freeTop より上なら、そこより上へは上げられないだけで、下げるまでは位置はそのまま(押した瞬間に飛ばない)
     var topOff = er[0];
@@ -1141,7 +1141,7 @@
   function onInfo(msg) { if (window.FLOOR_MECH_NOTIFY) window.FLOOR_MECH_NOTIFY(msg, 'info'); }
 
   // 後ろの柱のセットピン穴の変更(宙段フロアが格納位置にある時だけ。上がっている間は柱に荷重が掛かっていて抜けない)
-  // フレームの固定ピン: 位置(穴)の変更・抜き差し。宙段フロアがスロープ(u≦1.05)以下の時だけ位置を変えられる。差せるのはフロアがピンの穴の高さ以上にある時だけ(フロアのセットピンと同じ)
+  // フレームの固定ピン: 位置(穴)の変更・抜き刺し。宙段フロアがスロープ(u≦1.05)以下の時だけ位置を変えられる。刺せるのはフロアがピンの穴の高さ以上にある時だけ(フロアのセットピンと同じ)
   function setStopPinHole(n) {
     if (!SP_CFG) return false;
     n = Math.max(1, Math.min(SP_CFG.pts.length, Math.round(n)));
@@ -1152,7 +1152,7 @@
   function toggleStopPin() {
     if (!SP_CFG) return;
     if (SP.inserted) { SP.inserted = false; onInfo('固定ピンを抜いた'); return; }
-    SP.inserted = true;   // フロアの位置に関係なく刺せる。ピンは赤い板に差しておく止め具で、上がってきたフロアがピンに当たると、それより奥(上)へは動かなくなる(戻る方向は止めない)
+    SP.inserted = true;   // フロアの位置に関係なく刺せる。ピンは赤い板に刺しておく止め具で、上がってきたフロアがピンに当たると、それより奥(上)へは動かなくなる(戻る方向は止めない)
     onInfo('固定ピンを刺した(宙段フロアを上げるとピンに当たって止まります)');
   }
   function setRearPinHole(n) {
